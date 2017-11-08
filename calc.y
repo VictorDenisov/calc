@@ -1,26 +1,30 @@
 %{
 #include <stdio.h>
-#include <string.h>
 
-#include "calc.lex.h"
+#include "calc.h"
 
-void calcerror (char * str)
+static void
+calc_error (YYLTYPE * lloc, void * scanner, char * error)
 {
-  printf ("error\n");
+  expr_t * expr = calc_get_extra (scanner);
+  fprintf (stderr,
+	   "%s\n"
+	   "%*s^%*s^\n"
+	   "%d:%d-%d:%d '%s'\n",
+	   expr->buf,
+	   lloc->first_column, "", lloc->last_column - lloc->first_column - 1, "",
+	   lloc->first_line, lloc->first_column, lloc->last_line, lloc->last_column, error);
 }
-
-int calcwrap ()
-{
-  return (1);
-}
-
- int x = 0;
+  
 %}
 
-%name-prefix "calc"
-%file-prefix "calc"
+%define api.prefix {calc_}
+%define api.pure full
+%param {void * scanner}
+%locations
+%defines
 
-%start str
+%start value
 
 %token NUMBER
 
@@ -28,70 +32,21 @@ int calcwrap ()
 %left '*' '/'
 
 %%
-str: expr '\n'
-{
-  printf ("%d\n", $1);
-}
-;
+value: expr {
+  expr_t * expr = calc_get_extra (scanner);
+  expr->result = $1;
+ };
 
-expr: expr '+' expr
-{
-  $$ = $1 + $3;
-}
-|
-expr '-' expr
-{
-  $$ = $1 - $3;
-}
-|
-expr '*' expr
-{
-  $$ = $1 * $3;
-}
-|
-expr '/' expr
-{
-  $$ = $1 / $3;
-}
-|
-'(' expr ')'
-{
-  $$ = $2;
-}
-|
-'x'
-{
-  $$ = x;
-}
-|
-NUMBER
-;
+expr: NUMBER
+| expr '+' expr { $$ = $1 + $3; }
+| expr '-' expr { $$ = $1 - $3; }
+| expr '*' expr { $$ = $1 * $3; }
+| expr '/' expr { $$ = $1 / $3; }
+| '(' expr ')' { $$ = $2; }
+| 'x' {
+  expr_t * expr = calc_get_extra (scanner);
+  $$ = expr->x;
+  };
+
 %%
 
-int main (int argc, char* argv[])
-{
-  int buf_size = 2;
-  int i;
-  for (i = 1; i < argc; i++)
-    {
-      buf_size += strlen (argv[i]);
-    }
-
-  char buf[buf_size];
-  char * ptr = buf;
-  for (i = 1; i < argc; ++i)
-    {
-      char* arg;
-      for (arg = argv[i]; *arg; )
-	*ptr++ = *arg++;
-    }
-  *ptr++ = '\n';
-  *ptr = 0;
-  
-  calc_scan_string(buf);
-  calcparse ();
-  
-  x = 1;
-  calc_scan_string(buf);
-  calcparse ();
-}

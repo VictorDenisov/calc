@@ -1,14 +1,18 @@
-YACC=bison -y
+YACC=bison
 LEX=flex
 
-calc: calc.lex.c calc.lex.h calc.tab.h calc.tab.c
-	$(CC) $^ -o $@
+%.tab.h %.tab.c: %.y
+	$(YACC) -d $<
 
-calc.lex.c calc.lex.h: calc.l
-	$(LEX) --header-file=calc.lex.h -o $@ $<
+%.lex.h %.lex.c: %.l
+	$(LEX) --header-file=$*.lex.h -o $*.lex.c $<
 
-calc.tab.c: calc.y
-	$(YACC) $^
+main: main.o calc.lex.o calc.tab.o
 
-calc.tab.h: calc.y
-	$(YACC) -d $^
+calc.h: calc.lex.h calc.tab.h
+main.c: calc.h
+
+PHONY: clean
+
+clean:
+	$(RM) *.tab.[ch] *.lex.[ch] *.o main
