@@ -1,4 +1,6 @@
 *.lex.*
 *.tab.*
 *~
-calc
+*.sw[po]
+*.o
+main
