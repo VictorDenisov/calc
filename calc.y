@@ -28,23 +28,29 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 
 %token NUMBER
 
-%left '+' '-'
-%left '*' '/'
-%precedence NEG
-
 %%
 value: expr {
   expr_t * expr = calc_get_extra (scanner);
   expr->result = $1;
  };
 
-expr: NUMBER
-| expr '+' expr { $$ = $1 + $3; }
-| expr '-' expr { $$ = $1 - $3; }
-| expr '*' expr { $$ = $1 * $3; }
-| expr '/' expr { $$ = $1 / $3; }
-| '-' expr %prec NEG { $$ = - $2; }
-| '+' expr %prec NEG { $$ = $2; }
+expr:
+  term '+' term { $$ = $1 + $3; }
+| term '-' term { $$ = $1 - $3; }
+| term { $$ = $1; }
+
+term:
+  unary '*' unary { $$ = $1 * $3; }
+| unary '/' unary { $$ = $1 / $3; }
+| unary { $$ = $1; }
+
+unary:
+  '-' factor { $$ = - $2; }
+| '+' factor { $$ = $2; }
+| factor { $$ = $1; }
+
+factor:
+  NUMBER
 | '(' expr ')' { $$ = $2; }
 | 'x' {
   expr_t * expr = calc_get_extra (scanner);
@@ -52,4 +58,3 @@ expr: NUMBER
   };
 
 %%
-
