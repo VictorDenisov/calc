@@ -30,6 +30,7 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 
 %left '+' '-'
 %left '*' '/'
+%precedence NEG
 
 %%
 value: expr {
@@ -42,6 +43,8 @@ expr: NUMBER
 | expr '-' expr { $$ = $1 - $3; }
 | expr '*' expr { $$ = $1 * $3; }
 | expr '/' expr { $$ = $1 / $3; }
+| '-' expr %prec NEG { $$ = - $2; }
+| '+' expr %prec NEG { $$ = $2; }
 | '(' expr ')' { $$ = $2; }
 | 'x' {
   expr_t * expr = calc_get_extra (scanner);
