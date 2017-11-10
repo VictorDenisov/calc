@@ -8,14 +8,17 @@ int main (int argc, char * argv[])
   int buf_size = 1;
   int i;
   for (i = 1; i < argc; i++)
-    buf_size += strlen (argv[i]);
+    buf_size += strlen (argv[i]) + 1;
 
   char buf[buf_size];
   char * ptr = buf;
   char * arg;
   for (i = 1; i < argc; ++i)
-    for (arg = argv[i]; *arg; )
-      *ptr++ = *arg++;
+    {
+      for (arg = argv[i]; *arg; )
+        *ptr++ = *arg++;
+      *ptr++ = ' ';
+    }
   *ptr = 0;
   
   yyscan_t scanner;
