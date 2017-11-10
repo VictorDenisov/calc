@@ -36,6 +36,8 @@ int main (int argc, char * argv[])
         *ptr++ = *arg++;
       *ptr++ = ' ';
     }
+  if (optind != argc)
+    --ptr;
   *ptr = 0;
   
   yyscan_t scanner;
