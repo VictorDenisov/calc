@@ -1,6 +1,8 @@
 #ifndef _CALC_H_
 #define _CALC_H_
 
+#include <stdbool.h>
+
 #define CALC_STYPE long double
 #define YYSTYPE CALC_STYPE
 #define YYLTYPE CALC_LTYPE
@@ -16,6 +18,7 @@ typedef struct expr_t {
   int offset;
   char * buf;
   long double x;
+  bool has_x;
   long double result;
 } expr_t;
 

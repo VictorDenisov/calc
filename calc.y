@@ -54,6 +54,11 @@ factor:
 | '(' expr ')' { $$ = $2; }
 | 'x' {
   expr_t * expr = calc_get_extra (scanner);
+  if (!expr->has_x)
+    {
+      yyerror (&yylloc, scanner, YY_("x must be specified for this expression"));
+      YYABORT;
+    }
   $$ = expr->x;
   };
 
