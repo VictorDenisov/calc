@@ -52,7 +52,8 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 [' '] ;
 
 {FLOAT_NUMBER} {
-  *yylval = strtold (yytext, NULL);
+  yylval->val = strtold (yytext, NULL);
+  yylval->nonterm_type = NNT_VALUE;
   return NUMBER;
 }
 

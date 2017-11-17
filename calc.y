@@ -3,7 +3,7 @@
 
 #include "calc.h"
 #include "calc.parser.h"
-
+  
 static void
 calc_error (YYLTYPE * lloc, void * scanner, char * error)
 {
@@ -24,6 +24,8 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 %param {void * scanner}
 %locations
 %defines
+%define api.value.type union
+%define api.value.union.name nonterm_t
 
 %start value
 
