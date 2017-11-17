@@ -30,34 +30,23 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 %token NUMBER
 
 %%
-value: expr {
-  expr_t * expr = calc_get_extra (scanner);
-  expr->result = $1;
- };
+value: expr { CALC_RESULT ($1); }
 
 expr:
-  term '+' term { $$ = $1 + $3; }
-| term '-' term { $$ = $1 - $3; }
-| term { $$ = $1; }
+  term '+' term { CALC_BIN_PLUS ($$, $1, $3); }
+| term '-' term { CALC_BIN_MINUS ($$, $1, $3); }
+| term
 
 term:
-  factor '*' factor { $$ = $1 * $3; }
-| factor '/' factor { $$ = $1 / $3; }
-| factor { $$ = $1; }
+  factor '*' factor { CALC_BIN_MUL ($$, $1, $3); }
+| factor '/' factor { CALC_BIN_DIV ($$, $1, $3); }
+| factor
 
 factor:
   NUMBER
-| '-' factor { $$ = - $2; }
-| '+' factor { $$ = $2; }
+| '-' factor { CALC_UN_MINUS ($$, $2); }
+| '+' factor { CALC_UN_PLUS ($$, $2); }
 | '(' expr ')' { $$ = $2; }
-| 'x' {
-  expr_t * expr = calc_get_extra (scanner);
-  if (!expr->has_x)
-    {
-      yyerror (&yylloc, scanner, YY_("x must be specified for this expression"));
-      YYABORT;
-    }
-  $$ = expr->x;
-  };
+| 'x' { CALC_X ($$); }
 
 %%
