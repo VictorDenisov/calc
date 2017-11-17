@@ -40,17 +40,14 @@ expr:
 | term { $$ = $1; }
 
 term:
-  unary '*' unary { $$ = $1 * $3; }
-| unary '/' unary { $$ = $1 / $3; }
-| unary { $$ = $1; }
-
-unary:
-  '-' factor { $$ = - $2; }
-| '+' factor { $$ = $2; }
+  factor '*' factor { $$ = $1 * $3; }
+| factor '/' factor { $$ = $1 / $3; }
 | factor { $$ = $1; }
 
 factor:
   NUMBER
+| '-' factor { $$ = - $2; }
+| '+' factor { $$ = $2; }
 | '(' expr ')' { $$ = $2; }
 | 'x' {
   expr_t * expr = calc_get_extra (scanner);
