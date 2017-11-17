@@ -4,6 +4,8 @@
 #include <string.h>
 
 #include "calc.h"
+#include "calc.parser.h"
+#include "calc.compute.h"
 
 int main (int argc, char * argv[])
 {
@@ -45,7 +47,7 @@ int main (int argc, char * argv[])
 
   expr.buf = NULL;
   calc__scan_string (buf, scanner);
-  int parse_result = calc_parse (scanner);
+  int parse_result = calc_compute_parse (scanner);
   calc_lex_destroy (scanner);
 
   if (parse_result != 0)

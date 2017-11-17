@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "calc.h"
+#include "calc.parser.h"
 
 static void
 calc_error (YYLTYPE * lloc, void * scanner, char * error)
