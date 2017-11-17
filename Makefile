@@ -1,4 +1,4 @@
-YACC=bison
+YACC=bison -Wall -Werror
 LEX=flex
 CFLAGS+=-Wall -Werror -O2
 
