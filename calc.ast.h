@@ -26,5 +26,6 @@ typedef struct ast_node_t {
 } ast_node_t;
 
 extern int calc_ast_parse (yyscan_t scanner);
+extern long double calc_ast_compute (ast_node_t * ast, long double x);
 
 #endif /* _CALC_AST_H_ */
