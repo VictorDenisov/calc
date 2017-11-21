@@ -5,6 +5,7 @@
 
 %{
 #include <stdio.h>
+#define CALC_STYPE long double
 #include "calc.h"
 #include "calc.parser.h"
 
@@ -52,8 +53,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 [' '] ;
 
 {FLOAT_NUMBER} {
-  yylval->val = strtold (yytext, NULL);
-  yylval->nonterm_type = NNT_VALUE;
+  *yylval = strtold (yytext, NULL);
   return NUMBER;
 }
 
