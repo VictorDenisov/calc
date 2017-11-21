@@ -2,8 +2,11 @@
 #include <stdio.h>
 
 #include "calc.h"
+#ifndef CALC_STYPE
+#define CALC_STYPE long double
+#endif /* CALC_STYPE */
 #include "calc.parser.h"
-
+  
 static void
 calc_error (YYLTYPE * lloc, void * scanner, char * error)
 {
@@ -43,7 +46,7 @@ term:
 | factor
 
 factor:
-  NUMBER
+  NUMBER { CALC_NUMBER ($$, $1); }
 | '-' factor { CALC_UN_MINUS ($$, $2); }
 | '+' factor { CALC_UN_PLUS ($$, $2); }
 | '(' expr ')' { $$ = $2; }

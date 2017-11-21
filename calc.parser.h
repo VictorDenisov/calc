@@ -1,7 +1,6 @@
 #ifndef _CALC_PARSER_H_
 #define _CALC_PARSER_H_
 
-#define CALC_STYPE long double
 #define YYSTYPE CALC_STYPE
 #define YYLTYPE CALC_LTYPE
 

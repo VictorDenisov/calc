@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "calc.h"
 #include "calc.parser.h"
 #include "calc.compute.h"
+#include "calc.ast.h"
+#include "calc.h"
 
 int main (int argc, char * argv[])
 {
@@ -57,6 +58,20 @@ int main (int argc, char * argv[])
     }
 
   printf ("%Lg\n", expr.result);
+
+  calc_lex_init_extra (&expr, &scanner);
+  expr.buf = NULL;
+  calc__scan_string (buf, scanner);
+  int parse_ast_result = calc_ast_parse (scanner);
+  calc_lex_destroy (scanner);
+
+  if (parse_ast_result != 0)
+    {
+      fprintf (stderr, "Failed to parse expression '%s'\n", buf);
+      return (EXIT_FAILURE);
+    }
+
+  printf ("%d\n", expr.ast.token_type);
 
   return (EXIT_SUCCESS);
 }
