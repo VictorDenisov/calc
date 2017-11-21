@@ -36,13 +36,13 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 value: expr { CALC_RESULT ($1); }
 
 expr:
-  term '+' term { CALC_BIN_PLUS ($$, $1, $3); }
-| term '-' term { CALC_BIN_MINUS ($$, $1, $3); }
+  term '+' expr { CALC_BIN_PLUS ($$, $1, $3); }
+| term '-' expr { CALC_BIN_MINUS ($$, $1, $3); }
 | term
 
 term:
-  factor '*' factor { CALC_BIN_MUL ($$, $1, $3); }
-| factor '/' factor { CALC_BIN_DIV ($$, $1, $3); }
+  factor '*' term { CALC_BIN_MUL ($$, $1, $3); }
+| factor '/' term { CALC_BIN_DIV ($$, $1, $3); }
 | factor
 
 factor:
