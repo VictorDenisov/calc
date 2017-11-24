@@ -71,7 +71,8 @@ int main (int argc, char * argv[])
       return (EXIT_FAILURE);
     }
 
-  printf ("%d\n", expr.ast.token_type);
+  printf ("%Lg\n", calc_ast_compute (&expr.ast, expr.x));
+  calc_ast_free (&expr.ast);
 
   return (EXIT_SUCCESS);
 }

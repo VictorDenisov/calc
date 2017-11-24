@@ -1,6 +1,6 @@
 YACC=bison -Wall -Werror
 LEX=flex
-CFLAGS+=-Wall -Werror -O2
+CFLAGS+=-Wall -Werror -O2 -g
 
 %.tab.h %.tab.c: %.y
 	$(YACC) -d $<

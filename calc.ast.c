@@ -50,3 +50,26 @@ long double calc_ast_compute (ast_node_t * ast, long double x)
     }
   return (0);
 }
+
+static void calc_ast_free_rec (ast_node_t * ast) {
+  if (NULL != ast) {
+    calc_ast_free (ast);
+    free (ast);
+  }
+}
+
+void calc_ast_free (ast_node_t * ast) {
+  switch (ast->token_type)
+    {
+    case TT_NUMBER:
+    case TT_X:
+      break;
+    case TT_PLUS:
+    case TT_MINUS:
+    case TT_MUL:
+    case TT_DIV:
+      calc_ast_free_rec (ast->bin_op.left);
+      calc_ast_free_rec (ast->bin_op.right);
+      break;
+    }
+}
