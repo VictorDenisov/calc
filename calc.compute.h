@@ -1,8 +1,8 @@
 #ifndef _CALC_COMPUTE_H_
 #define _CALC_COMPUTE_H_
 
-#include "yyscan.h"
+#include "calc.h"
 
-extern int calc_compute_parse (yyscan_t scanner);
+extern parser_funcs_t compute_parser;
 
 #endif /* _CALC_COMPUTE_H_ */

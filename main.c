@@ -8,16 +8,40 @@
 #include "calc.ast.h"
 #include "calc.h"
 
+int run_calc (parser_funcs_t parser_funcs, char * expr, arg_x_t arg_x)
+{
+  long double result;
+
+  parser_t parser = parser_funcs.init (expr);
+  if (NULL == parser)
+    {
+      fprintf (stderr, "Failed to create parser\n");
+      return (EXIT_FAILURE);
+    }
+
+  int rv = parser_funcs.calc (parser, &arg_x, &result);
+
+  parser_funcs.free (parser);
+
+  if (0 != rv)
+    {
+      fprintf (stderr, "Failed to calculate expression '%s'\n", expr);
+      return (EXIT_FAILURE);
+    }
+
+  printf ("%Lg\n", result);
+  return (EXIT_SUCCESS);
+}
+
 int main (int argc, char * argv[])
 {
-  expr_t expr;
-  expr.has_x = false;
+  arg_x_t arg_x = { .has_x = false };
 
   if (getopt (argc, argv, "x:") == 'x')
     {
       char * end;
-      expr.has_x = true;
-      expr.x = strtold (optarg, &end);
+      arg_x.has_x = true;
+      arg_x.x = strtold (optarg, &end);
       if (*end != '\0')
         {
           fprintf (stderr, "x must be a number (parse fail at %td in '%s')\n", end - optarg, optarg);
@@ -42,37 +66,14 @@ int main (int argc, char * argv[])
   if (optind != argc)
     --ptr;
   *ptr = 0;
-  
-  yyscan_t scanner;
-  calc_lex_init_extra (&expr, &scanner);
 
-  expr.buf = NULL;
-  calc__scan_string (buf, scanner);
-  int parse_result = calc_compute_parse (scanner);
-  calc_lex_destroy (scanner);
-
-  if (parse_result != 0)
-    {
-      fprintf (stderr, "Failed to parse expression '%s'\n", buf);
-      return (EXIT_FAILURE);
-    }
-
-  printf ("%Lg\n", expr.result);
-
-  calc_lex_init_extra (&expr, &scanner);
-  expr.buf = NULL;
-  calc__scan_string (buf, scanner);
-  int parse_ast_result = calc_ast_parse (scanner);
-  calc_lex_destroy (scanner);
-
-  if (parse_ast_result != 0)
-    {
-      fprintf (stderr, "Failed to parse expression '%s'\n", buf);
-      return (EXIT_FAILURE);
-    }
-
-  printf ("%Lg\n", calc_ast_compute (&expr.ast, expr.x));
-  calc_ast_free (&expr.ast);
+  int rv;
+  rv = run_calc (compute_parser, buf, arg_x);
+  if (0 != rv)
+    return (rv);
+  rv = run_calc (ast_parser, buf, arg_x);
+  if (0 != rv)
+    return (rv);
 
   return (EXIT_SUCCESS);
 }

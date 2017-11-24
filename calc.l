@@ -11,35 +11,35 @@
 
 #define YY_NO_INPUT
 
-static void calc_lloc (expr_t * expr, char * ptr)
+static void calc_lloc (lex_loc_t * loc, char * ptr)
 {
-  if (NULL == expr->buf)
+  if (NULL == loc->buf)
     {
-      expr->buf = ptr;
-      expr->offset = 0;
-      expr->lineno = 1;
-      expr->column = 0;
+      loc->buf = ptr;
+      loc->offset = 0;
+      loc->lineno = 1;
+      loc->column = 0;
       return;
     }
 
-  for ( ; &expr->buf[expr->offset] < ptr; ++expr->offset)
-    if ('\n' == expr->buf[expr->offset])
+  for ( ; &loc->buf[loc->offset] < ptr; ++loc->offset)
+    if ('\n' == loc->buf[loc->offset])
       {
-        ++expr->lineno;
-        expr->column = 0;
+        ++loc->lineno;
+        loc->column = 0;
       }
     else
-      ++expr->column;
+      ++loc->column;
 }
 
-#define YY_USER_ACTION ({                  \
-      expr_t * expr = yyextra;             \
-      calc_lloc (expr, yy_bp);             \
-      yylloc->first_line = expr->lineno;   \
-      yylloc->first_column = expr->column; \
-      calc_lloc (expr, yy_cp);             \
-      yylloc->last_line = expr->lineno;    \
-      yylloc->last_column = expr->column;  \
+#define YY_USER_ACTION ({                 \
+      lex_loc_t * loc = yyextra;          \
+      calc_lloc (loc, yy_bp);             \
+      yylloc->first_line = loc->lineno;   \
+      yylloc->first_column = loc->column; \
+      calc_lloc (loc, yy_cp);             \
+      yylloc->last_line = loc->lineno;    \
+      yylloc->last_column = loc->column;  \
     });
 
 %}

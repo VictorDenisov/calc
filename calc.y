@@ -10,12 +10,12 @@
 static void
 calc_error (YYLTYPE * lloc, void * scanner, char * error)
 {
-  expr_t * expr = calc_get_extra (scanner);
+  lex_loc_t * loc = calc_get_extra (scanner);
   fprintf (stderr,
 	   "%s\n"
 	   "%*s^%*s^\n"
 	   "%d:%d-%d:%d '%s'\n",
-	   expr->buf,
+	   loc->buf,
 	   lloc->first_column, "", lloc->last_column - lloc->first_column - 1, "",
 	   lloc->first_line, lloc->first_column, lloc->last_line, lloc->last_column, error);
 }
