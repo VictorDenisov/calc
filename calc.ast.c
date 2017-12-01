@@ -6,8 +6,8 @@
 #include "calc.parser.h"
 
 typedef struct bin_op_t {
-  struct ast_node_t * left;
-  struct ast_node_t * right;
+  size_t left;
+  size_t right;
 } bin_op_t;
 
 typedef enum {
@@ -27,25 +27,69 @@ typedef struct ast_node_t {
   token_type_t token_type;
 } ast_node_t;
 
-typedef ast_node_t ast_state_t;
+typedef struct node_arena_t {
+  ast_node_t * arena;
+  unsigned int size;
+  unsigned int allocated;
+} node_arena_t;
+
+typedef struct ast_state_t {
+  node_arena_t arena;
+} ast_state_t;
 
 typedef struct ast_extra_t {
   lex_loc_t ll;
-  ast_node_t ast;
+  node_arena_t * arena;
 } ast_extra_t;
+
+static int arena_init (node_arena_t * arena)
+{
+  arena->size = 4;
+  arena->allocated = 1;
+  arena->arena = malloc (sizeof (arena->arena[0]) * arena->size);
+  if (NULL == arena->arena)
+    return (!0);
+  return (0);
+}
+
+static void arena_free (node_arena_t * arena)
+{
+  if (NULL != arena->arena)
+    free (arena->arena);
+}
+
+static unsigned int allocate_nodes (node_arena_t * arena, unsigned int count)
+{
+  if (arena->allocated + count >= arena->size)
+    {
+      unsigned int new_size = 2 * arena->size;
+      ast_node_t * new_arena = realloc (arena->arena, new_size * sizeof (arena->arena[0]));
+      if (NULL == new_arena)
+        return (0);
+      arena->arena = new_arena;
+      arena->size = new_size;
+    }
+  unsigned int result = arena->allocated;
+  arena->allocated += count;
+  return (result);
+}
 
 #define CALC_RESULT(RHS) {                          \
     ast_extra_t * extra = calc_get_extra (scanner); \
-    extra->ast = RHS;                               \
+    extra->arena->arena[0] = RHS;                   \
 }
 
 #define AST_BIN_OP(LHS, LEFT, OP, RIGHT) {              \
-    LHS.bin_op.left = malloc (sizeof (LEFT));           \
-    if (LHS.bin_op.left)                                \
-      *LHS.bin_op.left = LEFT;                          \
-    LHS.bin_op.right= malloc (sizeof (RIGHT));          \
-    if (LHS.bin_op.right)                               \
-      *LHS.bin_op.right = RIGHT;                        \
+    ast_extra_t * extra = calc_get_extra (scanner);     \
+    node_arena_t * arena = extra->arena;                \
+    unsigned int left = allocate_nodes (arena, 2);      \
+    if (0 != left)                                      \
+      {                                                 \
+        arena->arena[left] = LEFT;                      \
+        arena->arena[left + 1] = RIGHT;                 \
+        LHS.bin_op.left = left;                         \
+        LHS.bin_op.right= left + 1;                     \
+      }                                                 \
     LHS.token_type = OP;                                \
   }
 
@@ -65,6 +109,7 @@ static ast_node_t zero = { .val = 0, .token_type = TT_NUMBER, };
 typedef struct calc_ast_compute_args_t {
   jmp_buf error_env;
   arg_x_t arg_x;
+  node_arena_t * arena;
 } calc_ast_compute_args_t;
 
 typedef enum calc_ast_compute_error_t {
@@ -72,81 +117,74 @@ typedef enum calc_ast_compute_error_t {
   CACE_NOX,
 } calc_ast_compute_error_t;
 
-static long double calc_ast_compute (ast_node_t * ast, calc_ast_compute_args_t * args)
+static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t * args)
 {
-  switch (ast->token_type)
+  ast_node_t * node = &args->arena->arena[index];
+  switch (node->token_type)
     {
     case TT_NUMBER:
-      return (ast->val);
+      return (node->val);
     case TT_X:
       if (!args->arg_x.has_x)
         longjmp (args->error_env, CACE_NOX);
       return (args->arg_x.x);
     case TT_PLUS:
-      return (calc_ast_compute (ast->bin_op.left, args) + calc_ast_compute (ast->bin_op.right, args));
+      return (calc_ast_compute (node->bin_op.left, args) + calc_ast_compute (node->bin_op.right, args));
     case TT_MINUS:
-      return (calc_ast_compute (ast->bin_op.left, args) - calc_ast_compute (ast->bin_op.right, args));
+      return (calc_ast_compute (node->bin_op.left, args) - calc_ast_compute (node->bin_op.right, args));
     case TT_MUL:
-      return (calc_ast_compute (ast->bin_op.left, args) * calc_ast_compute (ast->bin_op.right, args));
+      return (calc_ast_compute (node->bin_op.left, args) * calc_ast_compute (node->bin_op.right, args));
     case TT_DIV:
-      return (calc_ast_compute (ast->bin_op.left, args) / calc_ast_compute (ast->bin_op.right, args));
+      return (calc_ast_compute (node->bin_op.left, args) / calc_ast_compute (node->bin_op.right, args));
     }
   return (0);
 }
 
 static int calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
 {
-  ast_node_t * ast = (ast_node_t *) state;
+  ast_state_t * ast = state;
   calc_ast_compute_args_t args = {
     .arg_x = *arg_x,
+    .arena = &ast->arena,
   };
   int rv = setjmp (args.error_env);
   if (CACE_OK != rv)
     return (rv);
-  *result = calc_ast_compute (ast, &args);
+  *result = calc_ast_compute (0, &args);
   return (0);
 }
 
-static void ast_node_free (ast_node_t * node);
-
-static void ast_node_free_rec (ast_node_t * node) {
-  if (NULL != node) {
-    ast_node_free (node);
-    free (node);
-  }
-}
-
-static void ast_node_free (ast_node_t * node) {
-  switch (node->token_type)
-    {
-    case TT_NUMBER:
-    case TT_X:
-      break;
-    case TT_PLUS:
-    case TT_MINUS:
-    case TT_MUL:
-    case TT_DIV:
-      ast_node_free_rec (node->bin_op.left);
-      ast_node_free_rec (node->bin_op.right);
-      break;
-    }
+static void calc_ast_free (parser_t state)
+{
+  ast_state_t * ast_state = state;
+  arena_free (&ast_state->arena);
+  free (ast_state);
 }
 
 static parser_t calc_ast_init (char * expr)
 {
+  int rv;
+
   ast_state_t * ast_state = malloc (sizeof (*ast_state));
   if (NULL == ast_state)
     return (NULL);
-
-  ast_extra_t extra = {
-    .ll = { .buf = NULL },
-  };
-
-  yyscan_t scanner;
-  int rv = calc_lex_init_extra (&extra, &scanner);
+  rv = arena_init (&ast_state->arena);
   if (0 != rv)
     {
       free (ast_state);
+      return (NULL);
+    }
+
+  ast_extra_t extra = {
+    .ll = { .buf = NULL },
+    .arena = &ast_state->arena,
+  };
+
+  yyscan_t scanner;
+  rv = calc_lex_init_extra (&extra, &scanner);
+  if (0 != rv)
+    {
+      calc_ast_free (ast_state);
       return (NULL);
     }
 
@@ -155,19 +193,11 @@ static parser_t calc_ast_init (char * expr)
   calc_lex_destroy (scanner);
   if (0 != rv)
     {
-      free (ast_state);
+      calc_ast_free (ast_state);
       return (NULL);
     }
 
-  *ast_state = extra.ast;
   return (ast_state);
-}
-
-static void calc_ast_free (parser_t state)
-{
-  ast_state_t * ast_state = state;
-  ast_node_free (ast_state);
-  free (ast_state);
 }
 
 parser_funcs_t ast_parser = {
