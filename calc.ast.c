@@ -1,3 +1,5 @@
+#include <setjmp.h>
+
 #include "calc.ast.h"
 #include "calc.h"
 #define CALC_STYPE struct ast_node_t
@@ -60,23 +62,48 @@ static ast_node_t zero = { .val = 0, .token_type = TT_NUMBER, };
 #define calc_parse calc_ast_parse
 #include "calc.tab.c"
 
-static long double calc_ast_compute (ast_node_t * ast, long double x)
+typedef struct calc_ast_compute_args_t {
+  jmp_buf error_env;
+  arg_x_t arg_x;
+} calc_ast_compute_args_t;
+
+typedef enum calc_ast_compute_error_t {
+  CACE_OK = 0,
+  CACE_NOX,
+} calc_ast_compute_error_t;
+
+static long double calc_ast_compute (ast_node_t * ast, calc_ast_compute_args_t * args)
 {
   switch (ast->token_type)
     {
     case TT_NUMBER:
       return (ast->val);
     case TT_X:
-      return (x);
+      if (!args->arg_x.has_x)
+        longjmp (args->error_env, CACE_NOX);
+      return (args->arg_x.x);
     case TT_PLUS:
-      return (calc_ast_compute (ast->bin_op.left, x) + calc_ast_compute (ast->bin_op.right, x));
+      return (calc_ast_compute (ast->bin_op.left, args) + calc_ast_compute (ast->bin_op.right, args));
     case TT_MINUS:
-      return (calc_ast_compute (ast->bin_op.left, x) - calc_ast_compute (ast->bin_op.right, x));
+      return (calc_ast_compute (ast->bin_op.left, args) - calc_ast_compute (ast->bin_op.right, args));
     case TT_MUL:
-      return (calc_ast_compute (ast->bin_op.left, x) * calc_ast_compute (ast->bin_op.right, x));
+      return (calc_ast_compute (ast->bin_op.left, args) * calc_ast_compute (ast->bin_op.right, args));
     case TT_DIV:
-      return (calc_ast_compute (ast->bin_op.left, x) / calc_ast_compute (ast->bin_op.right, x));
+      return (calc_ast_compute (ast->bin_op.left, args) / calc_ast_compute (ast->bin_op.right, args));
     }
+  return (0);
+}
+
+static int calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
+{
+  ast_node_t * ast = (ast_node_t *) state;
+  calc_ast_compute_args_t args = {
+    .arg_x = *arg_x,
+  };
+  int rv = setjmp (args.error_env);
+  if (CACE_OK != rv)
+    return (rv);
+  *result = calc_ast_compute (ast, &args);
   return (0);
 }
 
@@ -134,13 +161,6 @@ static parser_t calc_ast_init (char * expr)
 
   *ast_state = extra.ast;
   return (ast_state);
-}
-
-static int calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
-{
-  ast_state_t * ast_state = state;
-  *result = calc_ast_compute (ast_state, arg_x->x);
-  return (0);
 }
 
 static void calc_ast_free (parser_t state)
