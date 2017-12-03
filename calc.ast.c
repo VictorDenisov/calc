@@ -5,9 +5,12 @@
 #define CALC_STYPE struct ast_node_t
 #include "calc.parser.h"
 
+#define unlikely(x)     __builtin_expect ((x),  0)
+#define likely(x)       __builtin_expect ((x), !0)
+
 typedef struct bin_op_t {
-  size_t left;
-  size_t right;
+  unsigned int left;
+  unsigned int right;
 } bin_op_t;
 
 typedef enum {
@@ -45,7 +48,7 @@ typedef struct ast_extra_t {
 static int arena_init (node_arena_t * arena)
 {
   arena->size = 4;
-  arena->allocated = 1;
+  arena->allocated = 0;
   arena->arena = malloc (sizeof (arena->arena[0]) * arena->size);
   if (NULL == arena->arena)
     return (!0);
@@ -56,16 +59,17 @@ static void arena_free (node_arena_t * arena)
 {
   if (NULL != arena->arena)
     free (arena->arena);
+  arena->arena = NULL;
 }
 
-static unsigned int allocate_nodes (node_arena_t * arena, unsigned int count)
+static int allocate_nodes (node_arena_t * arena, unsigned int count)
 {
   if (arena->allocated + count >= arena->size)
     {
       unsigned int new_size = 2 * arena->size;
       ast_node_t * new_arena = realloc (arena->arena, new_size * sizeof (arena->arena[0]));
       if (NULL == new_arena)
-        return (0);
+        return (-1);
       arena->arena = new_arena;
       arena->size = new_size;
     }
@@ -74,16 +78,18 @@ static unsigned int allocate_nodes (node_arena_t * arena, unsigned int count)
   return (result);
 }
 
-#define CALC_RESULT(RHS) {                          \
-    ast_extra_t * extra = calc_get_extra (scanner); \
-    extra->arena->arena[0] = RHS;                   \
-}
+#define CALC_RESULT(RHS) {					\
+    ast_extra_t * extra = calc_get_extra (scanner);		\
+    unsigned int result = allocate_nodes (extra->arena, 1);	\
+    if (result >= 0)						\
+      extra->arena->arena[result] = RHS;			\
+  }
 
 #define AST_BIN_OP(LHS, LEFT, OP, RIGHT) {              \
     ast_extra_t * extra = calc_get_extra (scanner);     \
     node_arena_t * arena = extra->arena;                \
     unsigned int left = allocate_nodes (arena, 2);      \
-    if (0 != left)                                      \
+    if (left >= 0)                                      \
       {                                                 \
         arena->arena[left] = LEFT;                      \
         arena->arena[left + 1] = RIGHT;                 \
@@ -125,7 +131,7 @@ static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t
     case TT_NUMBER:
       return (node->val);
     case TT_X:
-      if (!args->arg_x.has_x)
+      if (unlikely (!args->arg_x.has_x))
         longjmp (args->error_env, CACE_NOX);
       return (args->arg_x.x);
     case TT_PLUS:
@@ -140,7 +146,7 @@ static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t
   return (0);
 }
 
-static int calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
+static int __attribute__ ((unused)) calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
 {
   ast_state_t * ast = state;
   calc_ast_compute_args_t args = {
@@ -150,8 +156,45 @@ static int calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
   int rv = setjmp (args.error_env);
   if (CACE_OK != rv)
     return (rv);
-  *result = calc_ast_compute (0, &args);
-  return (0);
+  *result = calc_ast_compute (ast->arena.allocated - 1, &args);
+  return (CACE_OK);
+}
+
+static int __attribute__ ((unused)) calc_ast_calc_ (parser_t state, arg_x_t * arg_x, long double * result)
+{
+  ast_state_t * ast = state;
+  long double values[ast->arena.allocated];
+  int i;
+  
+  for (i = 0; i < ast->arena.allocated; ++i)
+    {
+      ast_node_t * node = &ast->arena.arena[i];
+      switch (node->token_type)
+	{
+	case TT_NUMBER:
+	  values[i] = node->val;
+	  break;
+	case TT_X:
+	  if (unlikely (!arg_x->has_x))
+	    return (CACE_NOX);
+	  values[i] = arg_x->x;
+	  break;
+	case TT_PLUS:
+	  values[i] = values[node->bin_op.left] + values[node->bin_op.right];
+	  break;
+	case TT_MINUS:
+	  values[i] = values[node->bin_op.left] - values[node->bin_op.right];
+	  break;
+	case TT_MUL:
+	  values[i] = values[node->bin_op.left] * values[node->bin_op.right];
+	  break;
+	case TT_DIV:
+	  values[i] = values[node->bin_op.left] / values[node->bin_op.right];
+	  break;
+	}
+    }
+  *result = values[ast->arena.allocated - 1];
+  return (CACE_OK);
 }
 
 static void calc_ast_free (parser_t state)
@@ -202,6 +245,6 @@ static parser_t calc_ast_init (char * expr)
 
 parser_funcs_t ast_parser = {
   .init = calc_ast_init,
-  .calc = calc_ast_calc,
+  .calc = calc_ast_calc_,
   .free = calc_ast_free,
 };
