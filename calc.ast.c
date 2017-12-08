@@ -5,8 +5,8 @@
 #define CALC_STYPE struct ast_node_t
 #include "calc.parser.h"
 
-#define unlikely(x)     __builtin_expect ((x),  0)
-#define likely(x)       __builtin_expect ((x), !0)
+#define unlikely(x)     __builtin_expect ((x), 0)
+#define likely(x)       __builtin_expect (!!(x), !0)
 
 typedef struct bin_op_t {
   unsigned int left;
@@ -78,11 +78,11 @@ static int allocate_nodes (node_arena_t * arena, unsigned int count)
   return (result);
 }
 
-#define CALC_RESULT(RHS) {					\
-    ast_extra_t * extra = calc_get_extra (scanner);		\
-    unsigned int result = allocate_nodes (extra->arena, 1);	\
-    if (result >= 0)						\
-      extra->arena->arena[result] = RHS;			\
+#define CALC_RESULT(RHS) {                                      \
+    ast_extra_t * extra = calc_get_extra (scanner);             \
+    unsigned int result = allocate_nodes (extra->arena, 1);     \
+    if (result >= 0)                                            \
+      extra->arena->arena[result] = RHS;                        \
   }
 
 #define AST_BIN_OP(LHS, LEFT, OP, RIGHT) {              \
@@ -146,7 +146,7 @@ static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t
   return (0);
 }
 
-static int __attribute__ ((unused)) calc_ast_calc (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_ast_calc_rec (parser_t state, arg_x_t * arg_x, long double * result)
 {
   ast_state_t * ast = state;
   calc_ast_compute_args_t args = {
@@ -160,38 +160,38 @@ static int __attribute__ ((unused)) calc_ast_calc (parser_t state, arg_x_t * arg
   return (CACE_OK);
 }
 
-static int __attribute__ ((unused)) calc_ast_calc_ (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_ast_calc_iter (parser_t state, arg_x_t * arg_x, long double * result)
 {
   ast_state_t * ast = state;
   long double values[ast->arena.allocated];
   int i;
-  
+
   for (i = 0; i < ast->arena.allocated; ++i)
     {
       ast_node_t * node = &ast->arena.arena[i];
       switch (node->token_type)
-	{
-	case TT_NUMBER:
-	  values[i] = node->val;
-	  break;
-	case TT_X:
-	  if (unlikely (!arg_x->has_x))
-	    return (CACE_NOX);
-	  values[i] = arg_x->x;
-	  break;
-	case TT_PLUS:
-	  values[i] = values[node->bin_op.left] + values[node->bin_op.right];
-	  break;
-	case TT_MINUS:
-	  values[i] = values[node->bin_op.left] - values[node->bin_op.right];
-	  break;
-	case TT_MUL:
-	  values[i] = values[node->bin_op.left] * values[node->bin_op.right];
-	  break;
-	case TT_DIV:
-	  values[i] = values[node->bin_op.left] / values[node->bin_op.right];
-	  break;
-	}
+        {
+        case TT_NUMBER:
+          values[i] = node->val;
+          break;
+        case TT_X:
+          if (unlikely (!arg_x->has_x))
+            return (CACE_NOX);
+          values[i] = arg_x->x;
+          break;
+        case TT_PLUS:
+          values[i] = values[node->bin_op.left] + values[node->bin_op.right];
+          break;
+        case TT_MINUS:
+          values[i] = values[node->bin_op.left] - values[node->bin_op.right];
+          break;
+        case TT_MUL:
+          values[i] = values[node->bin_op.left] * values[node->bin_op.right];
+          break;
+        case TT_DIV:
+          values[i] = values[node->bin_op.left] / values[node->bin_op.right];
+          break;
+        }
     }
   *result = values[ast->arena.allocated - 1];
   return (CACE_OK);
@@ -243,8 +243,14 @@ static parser_t calc_ast_init (char * expr)
   return (ast_state);
 }
 
-parser_funcs_t ast_parser = {
+parser_funcs_t ast_parser_iter = {
   .init = calc_ast_init,
-  .calc = calc_ast_calc_,
+  .calc = calc_ast_calc_iter,
+  .free = calc_ast_free,
+};
+
+parser_funcs_t ast_parser_rec = {
+  .init = calc_ast_init,
+  .calc = calc_ast_calc_rec,
   .free = calc_ast_free,
 };

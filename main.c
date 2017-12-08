@@ -68,11 +68,14 @@ int main (int argc, char * argv[])
   *ptr = 0;
 
   int rv_compute = run_calc (compute_parser, buf, arg_x);
-  int rv_ast = run_calc (ast_parser, buf, arg_x);
+  int rv_ast_rec = run_calc (ast_parser_rec, buf, arg_x);
+  int rv_ast_iter = run_calc (ast_parser_iter, buf, arg_x);
   if (0 != rv_compute)
     return (rv_compute);
-  if (0 != rv_ast)
-    return (rv_ast);
+  if (0 != rv_ast_rec)
+    return (rv_ast_rec);
+  if (0 != rv_ast_iter)
+    return (rv_ast_iter);
 
   return (EXIT_SUCCESS);
 }

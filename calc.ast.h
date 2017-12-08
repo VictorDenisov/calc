@@ -3,6 +3,7 @@
 
 #include "calc.h"
 
-extern parser_funcs_t ast_parser;
+extern parser_funcs_t ast_parser_iter;
+extern parser_funcs_t ast_parser_rec;
 
 #endif /* _CALC_AST_H_ */
