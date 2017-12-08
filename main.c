@@ -9,6 +9,8 @@
 #include "calc.ast.h"
 #include "calc.h"
 
+#define DECIMAL (10)
+
 typedef enum parser_type_t {
   PT_COMPUTE,
   PT_AST_ITER,
@@ -19,6 +21,7 @@ typedef struct config_t {
   arg_x_t arg_x;
   char * expr;
   parser_type_t parser_type;
+  unsigned long iter_num;
 } config_t;
 
 bool parse_args (config_t * config, int argc, char * argv[])
@@ -33,12 +36,24 @@ bool parse_args (config_t * config, int argc, char * argv[])
 
   for (;;)
     {
-      int opt = getopt (argc, argv, "p:x:");
+      int opt = getopt (argc, argv, "n:p:x:");
       if (-1 == opt)
         break;
 
       switch (opt)
         {
+        case 'n':
+          {
+            char * end;
+            config->iter_num = strtoul (optarg, &end, DECIMAL);
+            if (*end != '\0')
+              {
+                fprintf (stderr, "n must be an integer number (parse fail at %td in '%s')\n", end - optarg, optarg);
+                return (false);
+              }
+            break;
+          }
+
         case 'p':
           {
             int i;
@@ -122,8 +137,6 @@ int run_calc (config_t * config)
       abort ();
     }
 
-  long double result;
-
   parser_t parser = parser_funcs.init (config->expr);
   if (NULL == parser)
     {
@@ -131,7 +144,17 @@ int run_calc (config_t * config)
       return (EXIT_FAILURE);
     }
 
-  int rv = parser_funcs.calc (parser, &config->arg_x, &result);
+  long double sum = 0;
+  int rv = 0;
+  int i;
+  for (i = 0; i < config->iter_num; ++i)
+    {
+      long double result;
+      rv = parser_funcs.calc (parser, &config->arg_x, &result);
+      if (0 != rv)
+        break;
+      sum += result;
+    }
 
   parser_funcs.free (parser);
 
@@ -141,7 +164,7 @@ int run_calc (config_t * config)
       return (EXIT_FAILURE);
     }
 
-  printf ("%Lg\n", result);
+  printf ("%Lg\n", sum);
   return (EXIT_SUCCESS);
 }
 
@@ -149,6 +172,7 @@ int main (int argc, char * argv[])
 {
   config_t config = {
     .parser_type = PT_COMPUTE,
+    .iter_num = 1,
   };
   if (!parse_args (&config, argc, argv))
     return (EXIT_FAILURE);
