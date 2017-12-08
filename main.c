@@ -103,24 +103,41 @@ bool parse_args (config_t * config, int argc, char * argv[])
   return (true);
 }
 
-int run_calc (parser_funcs_t parser_funcs, char * expr, arg_x_t arg_x)
+int run_calc (config_t * config)
 {
+  parser_funcs_t parser_funcs;
+  switch (config->parser_type)
+    {
+    case PT_COMPUTE:
+      parser_funcs = compute_parser;
+      break;
+    case PT_AST_ITER:
+      parser_funcs = ast_parser_iter;
+      break;
+    case PT_AST_REC:
+      parser_funcs = ast_parser_rec;
+      break;
+    default:
+      fprintf (stderr, "Unexpected config->parser_type value: %d\n", config->parser_type);
+      abort ();
+    }
+
   long double result;
 
-  parser_t parser = parser_funcs.init (expr);
+  parser_t parser = parser_funcs.init (config->expr);
   if (NULL == parser)
     {
       fprintf (stderr, "Failed to create parser\n");
       return (EXIT_FAILURE);
     }
 
-  int rv = parser_funcs.calc (parser, &arg_x, &result);
+  int rv = parser_funcs.calc (parser, &config->arg_x, &result);
 
   parser_funcs.free (parser);
 
   if (0 != rv)
     {
-      fprintf (stderr, "Failed to calculate expression '%s'\n", expr);
+      fprintf (stderr, "Failed to calculate expression '%s'\n", config->expr);
       return (EXIT_FAILURE);
     }
 
@@ -136,21 +153,7 @@ int main (int argc, char * argv[])
   if (!parse_args (&config, argc, argv))
     return (EXIT_FAILURE);
 
-  parser_funcs_t parser;
-  switch (config.parser_type)
-    {
-    case PT_COMPUTE:
-      parser = compute_parser;
-      break;
-    case PT_AST_ITER:
-      parser = ast_parser_iter;
-      break;
-    case PT_AST_REC:
-      parser = ast_parser_rec;
-      break;
-    }
-
-  int rv = run_calc (parser, config.expr, config.arg_x);
+  int rv = run_calc (&config);
 
   free (config.expr);
   return (rv);
