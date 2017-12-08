@@ -9,23 +9,54 @@
 #include "calc.ast.h"
 #include "calc.h"
 
+typedef enum parser_type_t {
+  PT_COMPUTE,
+  PT_AST_ITER,
+  PT_AST_REC,
+} parser_type_t;
+
 typedef struct config_t {
   arg_x_t arg_x;
   char * expr;
+  parser_type_t parser_type;
 } config_t;
 
 bool parse_args (config_t * config, int argc, char * argv[])
 {
   config->arg_x.has_x = false;
 
+  char * parser_types[] = {
+    [PT_COMPUTE] = "compute",
+    [PT_AST_ITER] = "ast_iter",
+    [PT_AST_REC] = "ast_rec",
+  };
+
   for (;;)
     {
-      int opt = getopt (argc, argv, "x:");
+      int opt = getopt (argc, argv, "p:x:");
       if (-1 == opt)
         break;
 
       switch (opt)
         {
+        case 'p':
+          {
+            int i;
+            int pt_len = sizeof (parser_types) / sizeof (parser_types[0]);
+            for (i = 0; i < pt_len; ++i)
+              if (0 == strcasecmp (optarg, parser_types[i]))
+                {
+                  config->parser_type = i;
+                  break;
+                }
+            if (i >= pt_len)
+              {
+                fprintf (stderr, "Unknown parser type: %s\n", optarg);
+                return (false);
+              }
+            break;
+          }
+
         case 'x':
           {
             char * end;
@@ -99,21 +130,27 @@ int run_calc (parser_funcs_t parser_funcs, char * expr, arg_x_t arg_x)
 
 int main (int argc, char * argv[])
 {
-  config_t config;
+  config_t config = {
+    .parser_type = PT_COMPUTE,
+  };
   if (!parse_args (&config, argc, argv))
     return (EXIT_FAILURE);
 
-  int rv_compute = run_calc (compute_parser, config.expr, config.arg_x);
-  int rv_ast_rec = run_calc (ast_parser_rec, config.expr, config.arg_x);
-  int rv_ast_iter = run_calc (ast_parser_iter, config.expr, config.arg_x);
+  parser_funcs_t parser;
+  switch (config.parser_type)
+    {
+    case PT_COMPUTE:
+      parser = compute_parser;
+      break;
+    case PT_AST_ITER:
+      parser = ast_parser_iter;
+      break;
+    case PT_AST_REC:
+      parser = ast_parser_rec;
+      break;
+    }
 
-  int rv = EXIT_SUCCESS;
-  if (0 != rv_compute)
-    rv = rv_compute;
-  else if (0 != rv_ast_rec)
-    rv = rv_ast_rec;
-  else if (0 != rv_ast_iter)
-    rv = rv_ast_iter;
+  int rv = run_calc (parser, config.expr, config.arg_x);
 
   free (config.expr);
   return (rv);
