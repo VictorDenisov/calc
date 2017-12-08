@@ -18,14 +18,32 @@ bool parse_args (config_t * config, int argc, char * argv[])
 {
   config->arg_x.has_x = false;
 
-  if (getopt (argc, argv, "x:") == 'x')
+  for (;;)
     {
-      char * end;
-      config->arg_x.has_x = true;
-      config->arg_x.x = strtold (optarg, &end);
-      if (*end != '\0')
+      int opt = getopt (argc, argv, "x:");
+      if (-1 == opt)
+        break;
+
+      switch (opt)
         {
-          fprintf (stderr, "x must be a number (parse fail at %td in '%s')\n", end - optarg, optarg);
+        case 'x':
+          {
+            char * end;
+            config->arg_x.has_x = true;
+            config->arg_x.x = strtold (optarg, &end);
+            if (*end != '\0')
+              {
+                fprintf (stderr, "x must be a number (parse fail at %td in '%s')\n", end - optarg, optarg);
+                return (false);
+              }
+            break;
+          }
+
+        case '?':
+          return (false);
+
+        default:
+          fprintf (stderr, "Unexpected result of getopt: %d ('%c')\n", opt, opt);
           return (false);
         }
     }
