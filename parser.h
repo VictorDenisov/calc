@@ -1,5 +1,5 @@
-#ifndef _CALC_PARSER_H_
-#define _CALC_PARSER_H_
+#ifndef _PARSER_H_
+#define _PARSER_H_
 
 #define YYSTYPE CALC_STYPE
 #define YYLTYPE CALC_LTYPE
@@ -9,4 +9,4 @@
 #include "calc.lex.h"
 #endif /* YY_DO_BEFORE_ACTION */
 
-#endif /* _CALC_PARSER_H_ */
+#endif /* _PARSER_H_ */

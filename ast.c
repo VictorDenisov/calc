@@ -1,9 +1,9 @@
 #include <setjmp.h>
 
-#include "calc.ast.h"
+#include "ast.h"
 #include "calc.h"
 #define CALC_STYPE struct ast_node_t
-#include "calc.parser.h"
+#include "parser.h"
 
 #define unlikely(x)     __builtin_expect ((x), 0)
 #define likely(x)       __builtin_expect (!!(x), !0)

@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "calc.parser.h"
-#include "calc.compute.h"
-#include "calc.ast.h"
+#include "parser.h"
+#include "compute.h"
+#include "ast.h"
 #include "calc.h"
 
 #define DECIMAL (10)

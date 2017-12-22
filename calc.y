@@ -5,7 +5,7 @@
 #ifndef CALC_STYPE
 #define CALC_STYPE long double
 #endif /* CALC_STYPE */
-#include "calc.parser.h"
+#include "parser.h"
   
 static void
 calc_error (YYLTYPE * lloc, void * scanner, char * error)

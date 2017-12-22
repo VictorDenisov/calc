@@ -8,13 +8,13 @@ CFLAGS+=-Wall -Werror -O2 -g
 %.lex.h %.lex.c: %.l
 	$(LEX) --header-file=$*.lex.h -o $*.lex.c $<
 
-main: main.o calc.lex.o calc.compute.o calc.ast.o
+main: main.o calc.lex.o compute.o ast.o
 
-calc.parser.h: calc.lex.h calc.tab.h
-main.c: calc.h calc.parser.h calc.compute.h calc.ast.h
-calc.compute.o: calc.tab.c calc.h calc.parser.h calc.compute.h
-calc.ast.o: calc.tab.c calc.h calc.parser.h calc.ast.h
-calc.lex.o: calc.h calc.parser.h
+parser.h: calc.lex.h calc.tab.h
+main.c: calc.h parser.h compute.h ast.h
+compute.o: calc.tab.c calc.h parser.h compute.h
+ast.o: calc.tab.c calc.h parser.h ast.h
+calc.lex.o: calc.h parser.h
 
 PHONY: clean
 

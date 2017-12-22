@@ -7,7 +7,7 @@
 #include <stdio.h>
 #define CALC_STYPE long double
 #include "calc.h"
-#include "calc.parser.h"
+#include "parser.h"
 
 #define YY_NO_INPUT
 

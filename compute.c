@@ -1,6 +1,6 @@
 #define CALC_STYPE long double
-#include "calc.parser.h"
-#include "calc.compute.h"
+#include "parser.h"
+#include "compute.h"
 #include "calc.h"
 
 typedef struct compute_state_t {
