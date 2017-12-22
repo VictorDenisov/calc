@@ -8,6 +8,7 @@
 #include "compute.h"
 #include "ast.h"
 #include "calc.h"
+#include "gccjit.h"
 
 #define DECIMAL (10)
 
@@ -15,6 +16,7 @@ typedef enum parser_type_t {
   PT_COMPUTE,
   PT_AST_ITER,
   PT_AST_REC,
+  PT_GCCJIT,
 } parser_type_t;
 
 typedef struct config_t {
@@ -32,6 +34,7 @@ bool parse_args (config_t * config, int argc, char * argv[])
     [PT_COMPUTE] = "compute",
     [PT_AST_ITER] = "ast_iter",
     [PT_AST_REC] = "ast_rec",
+    [PT_GCCJIT] = "gccjit",
   };
 
   for (;;)
@@ -131,6 +134,9 @@ int run_calc (config_t * config)
       break;
     case PT_AST_REC:
       parser_funcs = ast_parser_rec;
+      break;
+    case PT_GCCJIT:
+      parser_funcs = gccjit_parser;
       break;
     default:
       fprintf (stderr, "Unexpected config->parser_type value: %d\n", config->parser_type);

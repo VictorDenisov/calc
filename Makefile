@@ -1,6 +1,7 @@
 YACC=bison -Wall -Werror
 LEX=flex
 CFLAGS+=-Wall -Werror -O2 -g
+LDLIBS+=-lgccjit
 
 %.tab.h %.tab.c: %.y
 	$(YACC) -d $<
@@ -8,12 +9,13 @@ CFLAGS+=-Wall -Werror -O2 -g
 %.lex.h %.lex.c: %.l
 	$(LEX) --header-file=$*.lex.h -o $*.lex.c $<
 
-main: main.o calc.lex.o compute.o ast.o
+main: main.o calc.lex.o compute.o ast.o gccjit.o
 
 parser.h: calc.lex.h calc.tab.h
 main.c: calc.h parser.h compute.h ast.h
 compute.o: calc.tab.c calc.h parser.h compute.h
 ast.o: calc.tab.c calc.h parser.h ast.h
+gccjit.o: calc.tab.c calc.h parser.h ast.h
 calc.lex.o: calc.h parser.h
 
 PHONY: clean
