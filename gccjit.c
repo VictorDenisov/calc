@@ -6,12 +6,12 @@
 #include "calc.h"
 
 typedef union gccjit_rvalue_t {
-  long double val; /* lexer return value only */
+  calc_type_t val; /* lexer return value only */
   gcc_jit_rvalue * rvalue;
 } gccjit_rvalue_t;
 
 typedef struct gccjit_state_t {
-  long double (*compiled_calc) (long double);
+  calc_type_t (*compiled_calc) (calc_type_t);
   gcc_jit_result * jit_result;
 } gccjit_state_t;
 
@@ -19,7 +19,7 @@ typedef struct gccjit_extra_t {
   lex_loc_t ll;
   arg_x_t arg_x;
   gcc_jit_context * jit_ctx;
-  gcc_jit_type * long_double_type;
+  gcc_jit_type * calc_type;
   gcc_jit_param * param_x;
 } gccjit_extra_t;
 
@@ -27,7 +27,7 @@ void gccjit_result (gccjit_extra_t * extra, gcc_jit_rvalue * rhs) {
   gcc_jit_function * func =
     gcc_jit_context_new_function (extra->jit_ctx, NULL,
                                   GCC_JIT_FUNCTION_EXPORTED,
-                                  extra->long_double_type,
+                                  extra->calc_type,
                                   "compiled_calc",
                                   1, &extra->param_x,
                                   0);
@@ -40,13 +40,21 @@ void gccjit_result (gccjit_extra_t * extra, gcc_jit_rvalue * rhs) {
     gccjit_result (extra, RHS.rvalue);                  \
 }
 
-#define CALC_NUMBER(LHS, NUMBER) {                        \
-    gccjit_extra_t * extra = calc_get_extra (scanner);    \
-    LHS.rvalue = gcc_jit_context_new_rvalue_from_double ( \
-        extra->jit_ctx,                                   \
-        extra->long_double_type,                          \
-        NUMBER.val);                                      \
-}
+#define CALC_NUMBER(LHS, NUMBER) {					\
+    gccjit_extra_t * extra = calc_get_extra (scanner);			\
+    if (__builtin_types_compatible_p (calc_type_t, long double) ||	\
+	__builtin_types_compatible_p (calc_type_t, __complex__ long double) || \
+	__builtin_types_compatible_p (calc_type_t, double) ||		\
+	__builtin_types_compatible_p (calc_type_t, __complex__ double) ||	\
+	__builtin_types_compatible_p (calc_type_t, float) ||		\
+	__builtin_types_compatible_p (calc_type_t, __complex__ float))	\
+      LHS.rvalue = gcc_jit_context_new_rvalue_from_double (extra->jit_ctx, extra->calc_type, NUMBER.val); \
+    else if (__builtin_types_compatible_p (calc_type_t, long) ||	\
+	     __builtin_types_compatible_p (calc_type_t, unsigned long)) \
+      LHS.rvalue = gcc_jit_context_new_rvalue_from_long (extra->jit_ctx, extra->calc_type, NUMBER.val); \
+    else								\
+      LHS.rvalue = gcc_jit_context_new_rvalue_from_int (extra->jit_ctx, extra->calc_type, NUMBER.val); \
+  }
 
 #define GCCJIT_BIN_OP(LHS, LEFT, OP, RIGHT) {          \
     gccjit_extra_t * extra = calc_get_extra (scanner); \
@@ -54,7 +62,7 @@ void gccjit_result (gccjit_extra_t * extra, gcc_jit_rvalue * rhs) {
         extra->jit_ctx,                                \
         NULL,                                          \
         OP,                                            \
-        extra->long_double_type,                       \
+        extra->calc_type,                              \
         LEFT.rvalue,                                   \
         RIGHT.rvalue);                                 \
 }
@@ -70,7 +78,7 @@ void gccjit_result (gccjit_extra_t * extra, gcc_jit_rvalue * rhs) {
         extra->jit_ctx,                                \
         NULL,                                          \
         GCC_JIT_UNARY_OP_MINUS,                        \
-        extra->long_double_type,                       \
+        extra->calc_type,                              \
         ARG.rvalue);                                   \
 }
 #define CALC_UN_PLUS(LHS, ARG) LHS = ARG
@@ -122,9 +130,19 @@ static parser_t calc_gccjit_init (char * expr)
       goto free_jit_ctx;
     }
 
-  extra.long_double_type = gcc_jit_context_get_type (extra.jit_ctx, GCC_JIT_TYPE_LONG_DOUBLE);
+  typeof (GCC_JIT_TYPE_LONG_DOUBLE) gcc_jit_type[] = {
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = GCC_JIT_TYPE_LONG_DOUBLE,
+    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = GCC_JIT_TYPE_LONG_DOUBLE,
+    [ __builtin_types_compatible_p (calc_type_t, double) ]                  = GCC_JIT_TYPE_DOUBLE,
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = GCC_JIT_TYPE_DOUBLE,
+    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = GCC_JIT_TYPE_FLOAT,    
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = GCC_JIT_TYPE_FLOAT,    
+    [ __builtin_types_compatible_p (calc_type_t, long long) ]               = GCC_JIT_TYPE_LONG_LONG,    
+    [ __builtin_types_compatible_p (calc_type_t, int) ]                     = GCC_JIT_TYPE_INT, /* default */
+  };
+  extra.calc_type = gcc_jit_context_get_type (extra.jit_ctx, gcc_jit_type[sizeof (gcc_jit_type) / sizeof (gcc_jit_type[0]) - 1]);
   extra.param_x =
-    gcc_jit_context_new_param (extra.jit_ctx, NULL, extra.long_double_type, "x");
+    gcc_jit_context_new_param (extra.jit_ctx, NULL, extra.calc_type, "x");
 
   calc__scan_string (expr, scanner);
   rv = calc_gccjit_parse (scanner);
@@ -143,7 +161,7 @@ static parser_t calc_gccjit_init (char * expr)
       goto free_state;
     }
 
-  gccjit_state->compiled_calc = \
+  gccjit_state->compiled_calc =
     gcc_jit_result_get_code (gccjit_state->jit_result, "compiled_calc");
   if (NULL == gccjit_state->compiled_calc)
     {
@@ -161,7 +179,7 @@ fail:
   return (NULL);
 }
 
-static int calc_gccjit_calc (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_gccjit_calc (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
   gccjit_state_t * gccjit_state = state;
   *result = gccjit_state->compiled_calc (arg_x->x);

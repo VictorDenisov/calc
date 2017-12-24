@@ -12,7 +12,7 @@ LDLIBS+=-lgccjit
 main: main.o calc.lex.o compute.o ast.o gccjit.o
 
 parser.h: calc.lex.h calc.tab.h
-main.c: calc.h parser.h compute.h ast.h
+main.o: calc.h parser.h compute.h ast.h
 compute.o: calc.tab.c calc.h parser.h compute.h
 ast.o: calc.tab.c calc.h parser.h ast.h
 gccjit.o: calc.tab.c calc.h parser.h ast.h

@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+typedef long calc_type_t;
+
 typedef struct lex_loc_t {
   int lineno;
   int column;
@@ -11,7 +13,7 @@ typedef struct lex_loc_t {
 } lex_loc_t;
 
 typedef struct arg_x_t {
-  long double x;
+  calc_type_t x;
   bool has_x;
 } arg_x_t;
 
@@ -19,7 +21,7 @@ typedef void * parser_t;
 
 typedef struct parser_funcs_t {
   parser_t (*init) (char *);
-  int (*calc) (parser_t, arg_x_t *, long double *);
+  int (*calc) (parser_t, arg_x_t *, calc_type_t *);
   void (*free) (parser_t);
 } parser_funcs_t;
 

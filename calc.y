@@ -2,9 +2,6 @@
 #include <stdio.h>
 
 #include "calc.h"
-#ifndef CALC_STYPE
-#define CALC_STYPE long double
-#endif /* CALC_STYPE */
 #include "parser.h"
   
 static void

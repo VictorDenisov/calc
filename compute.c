@@ -1,7 +1,7 @@
-#define CALC_STYPE long double
+#include "calc.h"
+#define CALC_STYPE calc_type_t
 #include "parser.h"
 #include "compute.h"
-#include "calc.h"
 
 typedef struct compute_state_t {
   char * expr;
@@ -11,7 +11,7 @@ typedef struct compute_state_t {
 typedef struct compute_extra_t {
   lex_loc_t ll;
   arg_x_t arg_x;
-  long double result;
+  calc_type_t result;
 } compute_extra_t;
 
 #define CALC_RESULT(RHS) {                              \
@@ -56,7 +56,7 @@ static parser_t calc_compute_init (char * expr)
   return (compute_state);
 }
 
-static int calc_compute_calc (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_compute_calc (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
   compute_state_t * compute_state = state;
   compute_extra_t extra = {

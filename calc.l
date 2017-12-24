@@ -5,7 +5,7 @@
 
 %{
 #include <stdio.h>
-#define CALC_STYPE long double
+#define CALC_STYPE calc_type_t
 #include "calc.h"
 #include "parser.h"
 

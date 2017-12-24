@@ -150,12 +150,12 @@ int run_calc (config_t * config)
       return (EXIT_FAILURE);
     }
 
-  long double sum = 0;
+  calc_type_t sum = 0;
   int rv = 0;
   int i;
   for (i = 0; i < config->iter_num; ++i)
     {
-      long double result;
+      calc_type_t result;
       rv = parser_funcs.calc (parser, &config->arg_x, &result);
       if (0 != rv)
         break;
@@ -170,7 +170,19 @@ int run_calc (config_t * config)
       return (EXIT_FAILURE);
     }
 
-  printf ("%Lg\n", sum);
+  static char * format[] = {
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = "%Lg",
+    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%Lg",
+    [ __builtin_types_compatible_p (calc_type_t, double) ]                  = "%g",
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = "%g",
+    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%g",    
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = "%g",    
+    [ __builtin_types_compatible_p (calc_type_t, long long) ]               = "%lld",    
+    [ __builtin_types_compatible_p (calc_type_t, int) ]                     = "%d", /* default */
+  };
+  
+  printf (format[sizeof (format) / sizeof (format[0]) - 1], sum);
+  putchar ('\n');
   return (EXIT_SUCCESS);
 }
 

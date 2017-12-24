@@ -24,7 +24,7 @@ typedef enum {
 
 typedef struct ast_node_t {
   union {
-    long double val;
+    calc_type_t val;
     bin_op_t bin_op;
   };
   token_type_t token_type;
@@ -123,7 +123,7 @@ typedef enum calc_ast_compute_error_t {
   CACE_NOX,
 } calc_ast_compute_error_t;
 
-static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t * args)
+static calc_type_t calc_ast_compute (unsigned int index, calc_ast_compute_args_t * args)
 {
   ast_node_t * node = &args->arena->arena[index];
   switch (node->token_type)
@@ -146,7 +146,7 @@ static long double calc_ast_compute (unsigned int index, calc_ast_compute_args_t
   return (0);
 }
 
-static int calc_ast_calc_rec (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_ast_calc_rec (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
   ast_state_t * ast = state;
   calc_ast_compute_args_t args = {
@@ -160,10 +160,10 @@ static int calc_ast_calc_rec (parser_t state, arg_x_t * arg_x, long double * res
   return (CACE_OK);
 }
 
-static int calc_ast_calc_iter (parser_t state, arg_x_t * arg_x, long double * result)
+static int calc_ast_calc_iter (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
   ast_state_t * ast = state;
-  long double values[ast->arena.allocated];
+  calc_type_t values[ast->arena.allocated];
   int i;
 
   for (i = 0; i < ast->arena.allocated; ++i)
