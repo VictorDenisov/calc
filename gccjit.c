@@ -130,7 +130,7 @@ static parser_t calc_gccjit_init (char * expr)
       goto free_jit_ctx;
     }
 
-  typeof (GCC_JIT_TYPE_LONG_DOUBLE) gcc_jit_type[] = {
+  static typeof (GCC_JIT_TYPE_LONG_DOUBLE) gcc_jit_type[] = {
     [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = GCC_JIT_TYPE_LONG_DOUBLE,
     [ __builtin_types_compatible_p (calc_type_t, long double) ]             = GCC_JIT_TYPE_LONG_DOUBLE,
     [ __builtin_types_compatible_p (calc_type_t, double) ]                  = GCC_JIT_TYPE_DOUBLE,
