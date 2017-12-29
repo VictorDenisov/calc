@@ -12,7 +12,7 @@ typedef union libjit_rvalue_t {
 
 typedef struct libjit_state_t {
   jit_context_t jit_ctx;
-  jit_function_t func;
+  calc_type_t (*compiled_func) (calc_type_t);
 } libjit_state_t;
 
 typedef struct libjit_extra_t {
@@ -78,18 +78,16 @@ static const jit_type_t * _jit_calc_type[] = {
 static void calc_libjit_free (parser_t state)
 {
   libjit_state_t * libjit_state = state;
-  if (NULL != libjit_state->func)
-    jit_function_abandon (libjit_state->func);
   if (NULL != libjit_state->jit_ctx)
     jit_context_destroy (libjit_state->jit_ctx);
   free (libjit_state);
 }
 
-#define ALLOC_FAIL(VAR, TEXT)                                       \
+#define ALLOC_FAIL(VAR, TEXT, LABEL)                                \
   if (NULL == VAR)                                                  \
     {                                                               \
       fprintf (stderr, "Failed to allocate memory for " TEXT "\n"); \
-      goto free_state;                                              \
+      goto LABEL;                                                   \
     }
 
 static parser_t calc_libjit_init (char * expr)
@@ -97,14 +95,9 @@ static parser_t calc_libjit_init (char * expr)
   int rv;
 
   libjit_state_t * libjit_state = malloc (sizeof (*libjit_state));
-  if (NULL == libjit_state)
-    {
-      fprintf (stderr, "Failed to allocate memory for parser state\n");
-      goto fail;
-    }
-  libjit_state->func = NULL;
+  ALLOC_FAIL (libjit_state, "parser state", fail);
   libjit_state->jit_ctx = jit_context_create ();
-  ALLOC_FAIL (libjit_state->jit_ctx, "JIT context");
+  ALLOC_FAIL (libjit_state->jit_ctx, "JIT context", free_state);
 
   libjit_extra_t extra = {
     .ll = { .buf = NULL },
@@ -117,12 +110,12 @@ static parser_t calc_libjit_init (char * expr)
     JIT_CALC_TYPE,
     func_arg_types, /* num_params = */ 1,
     /* incref = */ 1);
-  ALLOC_FAIL (signature, "function signature");
-  libjit_state->func = extra.func = jit_function_create (libjit_state->jit_ctx, signature);
-  ALLOC_FAIL (extra.func, "function object");
+  ALLOC_FAIL (signature, "function signature", free_state);
+  extra.func = jit_function_create (libjit_state->jit_ctx, signature);
+  ALLOC_FAIL (extra.func, "function object", free_state);
   jit_type_free (signature);
   extra.x = jit_value_get_param (extra.func, 0);
-  ALLOC_FAIL (extra.x, "function argument");
+  ALLOC_FAIL (extra.x, "function argument", abandon_func);
 
   yyscan_t scanner;
   rv = calc_lex_init_extra (&extra, &scanner);
@@ -141,16 +134,20 @@ static parser_t calc_libjit_init (char * expr)
       goto free_state;
     }
 
-  rv = jit_function_compile (libjit_state->func);
+  rv = jit_function_compile (extra.func);
   jit_context_build_end (libjit_state->jit_ctx);
   if (0 == rv)
     {
       fprintf (stderr, "Failed to compile function\n");
       goto free_state;
     }
+  libjit_state->compiled_func = jit_function_to_closure (extra.func);
+  ALLOC_FAIL (libjit_state->compiled_func, "function closure", abandon_func);
 
   return (libjit_state);
 
+abandon_func:
+  jit_function_abandon (extra.func);
 free_state:
   calc_libjit_free (libjit_state);
 fail:
@@ -160,9 +157,8 @@ fail:
 static int calc_libjit_calc (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
   libjit_state_t * libjit_state = state;
-  void *args[] = { &arg_x->x };
-  int rv = jit_function_apply (libjit_state->func, args, result);
-  return (!rv);
+  *result = libjit_state->compiled_func (arg_x->x);
+  return (0);
 }
 
 parser_funcs_t libjit_parser = {
