@@ -10,6 +10,7 @@
 #include "calc.h"
 #include "gccjit.h"
 #include "libjit.h"
+#include "llvm.h"
 
 #define DECIMAL (10)
 
@@ -19,6 +20,7 @@ typedef enum parser_type_t {
   PT_AST_REC,
   PT_GCCJIT,
   PT_LIBJIT,
+  PT_LLVM,
 } parser_type_t;
 
 typedef struct config_t {
@@ -38,6 +40,7 @@ bool parse_args (config_t * config, int argc, char * argv[])
     [PT_AST_REC] = "ast_rec",
     [PT_GCCJIT] = "gccjit",
     [PT_LIBJIT] = "libjit",
+    [PT_LLVM] = "llvm",
   };
 
   for (;;)
@@ -143,6 +146,9 @@ int run_calc (config_t * config)
       break;
     case PT_LIBJIT:
       parser_funcs = libjit_parser;
+      break;
+    case PT_LLVM:
+      parser_funcs = llvm_parser;
       break;
     default:
       fprintf (stderr, "Unexpected config->parser_type value: %d\n", config->parser_type);
