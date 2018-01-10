@@ -11,6 +11,7 @@
 #include "gccjit.h"
 #include "libjit.h"
 #include "llvm.h"
+#include "dl.h"
 
 #define DECIMAL (10)
 
@@ -21,6 +22,7 @@ typedef enum parser_type_t {
   PT_GCCJIT,
   PT_LIBJIT,
   PT_LLVM,
+  PT_DL,
 } parser_type_t;
 
 typedef struct config_t {
@@ -41,6 +43,7 @@ bool parse_args (config_t * config, int argc, char * argv[])
     [PT_GCCJIT] = "gccjit",
     [PT_LIBJIT] = "libjit",
     [PT_LLVM] = "llvm",
+    [PT_DL] = "dl",
   };
 
   for (;;)
@@ -129,31 +132,16 @@ bool parse_args (config_t * config, int argc, char * argv[])
 
 int run_calc (config_t * config)
 {
-  parser_funcs_t parser_funcs;
-  switch (config->parser_type)
-    {
-    case PT_COMPUTE:
-      parser_funcs = compute_parser;
-      break;
-    case PT_AST_ITER:
-      parser_funcs = ast_parser_iter;
-      break;
-    case PT_AST_REC:
-      parser_funcs = ast_parser_rec;
-      break;
-    case PT_GCCJIT:
-      parser_funcs = gccjit_parser;
-      break;
-    case PT_LIBJIT:
-      parser_funcs = libjit_parser;
-      break;
-    case PT_LLVM:
-      parser_funcs = llvm_parser;
-      break;
-    default:
-      fprintf (stderr, "Unexpected config->parser_type value: %d\n", config->parser_type);
-      abort ();
-    }
+  static parser_funcs_t * parser_funcs_[] = {
+    [PT_COMPUTE] = &compute_parser,
+    [PT_AST_ITER] = &ast_parser_iter,
+    [PT_AST_REC] = &ast_parser_rec,
+    [PT_GCCJIT] = &gccjit_parser,
+    [PT_LIBJIT] = &libjit_parser,
+    [PT_LLVM] = &llvm_parser,
+    [PT_DL] = &dl_parser,
+  };
+  parser_funcs_t parser_funcs = *parser_funcs_[config->parser_type];
 
   parser_t parser = parser_funcs.init (config->expr);
   if (NULL == parser)

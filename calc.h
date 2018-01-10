@@ -3,7 +3,10 @@
 
 #include <stdbool.h>
 
-typedef long double calc_type_t;
+/* typedef long double calc_type_t; */
+#ifndef calc_type_t
+#define calc_type_t long double
+#endif /* calc_type_t */
 
 typedef struct lex_loc_t {
   int lineno;
