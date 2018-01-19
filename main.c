@@ -12,6 +12,7 @@
 #include "libjit.h"
 #include "llvm.h"
 #include "elf.h"
+#include "dl.h"
 
 #define DECIMAL (10)
 
@@ -23,6 +24,7 @@ typedef enum parser_type_t {
   PT_LIBJIT,
   PT_LLVM,
   PT_ELF,
+  PT_DL,
 } parser_type_t;
 
 typedef struct config_t {
@@ -44,6 +46,7 @@ bool parse_args (config_t * config, int argc, char * argv[])
     [PT_LIBJIT] = "libjit",
     [PT_LLVM] = "llvm",
     [PT_ELF] = "elf",
+    [PT_DL] = "dl",
   };
 
   for (;;)
@@ -140,6 +143,7 @@ int run_calc (config_t * config)
     [PT_LIBJIT] = &libjit_parser,
     [PT_LLVM] = &llvm_parser,
     [PT_ELF] = &elf_parser,
+    [PT_DL] = &dl_parser,
   };
   parser_funcs_t parser_funcs = *parser_funcs_[config->parser_type];
 
