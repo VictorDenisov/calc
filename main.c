@@ -16,21 +16,15 @@
 
 #define DECIMAL (10)
 
-typedef enum parser_type_t {
-  PT_COMPUTE,
-  PT_AST_ITER,
-  PT_AST_REC,
-  PT_GCCJIT,
-  PT_LIBJIT,
-  PT_LLVM,
-  PT_ELF,
-  PT_DL,
+typedef struct parser_type_t {
+  char * name;
+  parser_funcs_t * parser_funcs;  
 } parser_type_t;
 
 typedef struct config_t {
   arg_x_t arg_x;
   char * expr;
-  parser_type_t parser_type;
+  parser_funcs_t * parser_funcs;
   unsigned long iter_num;
 } config_t;
 
@@ -38,15 +32,15 @@ bool parse_args (config_t * config, int argc, char * argv[])
 {
   config->arg_x.has_x = false;
 
-  char * parser_types[] = {
-    [PT_COMPUTE] = "compute",
-    [PT_AST_ITER] = "ast_iter",
-    [PT_AST_REC] = "ast_rec",
-    [PT_GCCJIT] = "gccjit",
-    [PT_LIBJIT] = "libjit",
-    [PT_LLVM] = "llvm",
-    [PT_ELF] = "elf",
-    [PT_DL] = "dl",
+  static parser_type_t parser_types[] = {
+    { "compute", &compute_parser },
+    { "ast_iter", &ast_parser_iter },
+    { "ast_rec", &ast_parser_rec },
+    { "gccjit", &gccjit_parser },
+    { "libjit", &libjit_parser },
+    { "llvm", &llvm_parser },
+    { "elf", &elf_parser },
+    { "dl", &dl_parser },
   };
 
   for (;;)
@@ -74,9 +68,9 @@ bool parse_args (config_t * config, int argc, char * argv[])
             int i;
             int pt_len = sizeof (parser_types) / sizeof (parser_types[0]);
             for (i = 0; i < pt_len; ++i)
-              if (0 == strcasecmp (optarg, parser_types[i]))
+              if (0 == strcasecmp (optarg, parser_types[i].name))
                 {
-                  config->parser_type = i;
+                  config->parser_funcs = parser_types[i].parser_funcs;
                   break;
                 }
             if (i >= pt_len)
@@ -135,19 +129,7 @@ bool parse_args (config_t * config, int argc, char * argv[])
 
 int run_calc (config_t * config)
 {
-  static parser_funcs_t * parser_funcs_[] = {
-    [PT_COMPUTE] = &compute_parser,
-    [PT_AST_ITER] = &ast_parser_iter,
-    [PT_AST_REC] = &ast_parser_rec,
-    [PT_GCCJIT] = &gccjit_parser,
-    [PT_LIBJIT] = &libjit_parser,
-    [PT_LLVM] = &llvm_parser,
-    [PT_ELF] = &elf_parser,
-    [PT_DL] = &dl_parser,
-  };
-  parser_funcs_t parser_funcs = *parser_funcs_[config->parser_type];
-
-  parser_t parser = parser_funcs.init (config->expr);
+  parser_t parser = config->parser_funcs->init (config->expr);
   if (NULL == parser)
     {
       fprintf (stderr, "Failed to create parser\n");
@@ -160,13 +142,13 @@ int run_calc (config_t * config)
   for (i = 0; i < config->iter_num; ++i)
     {
       calc_type_t result;
-      rv = parser_funcs.calc (parser, &config->arg_x, &result);
+      rv = config->parser_funcs->calc (parser, &config->arg_x, &result);
       if (0 != rv)
         break;
       sum += result;
     }
 
-  parser_funcs.free (parser);
+  config->parser_funcs->free (parser);
 
   if (0 != rv)
     {
@@ -193,7 +175,7 @@ int run_calc (config_t * config)
 int main (int argc, char * argv[])
 {
   config_t config = {
-    .parser_type = PT_COMPUTE,
+    .parser_funcs = &compute_parser,
     .iter_num = 1,
   };
   if (!parse_args (&config, argc, argv))
