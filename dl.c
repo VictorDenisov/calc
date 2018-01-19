@@ -1,11 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
 #include <unistd.h>
-#define __USE_GNU
-#include <fcntl.h>
-#include <sys/wait.h>
 #include <sys/syscall.h>
 #include <dlfcn.h>
 
@@ -43,7 +39,7 @@ static parser_t calc_dl_init (char * expr)
   FILE * fd = popen (cc_cmd, "w");
   if (NULL == fd)
     {
-      fprintf (stderr, "Failed to make FILE * out of file descriptor\n");
+      fprintf (stderr, "Failed to popen $CC\n");
       goto close_memfd;
     }
   
@@ -105,5 +101,3 @@ parser_funcs_t dl_parser = {
   .calc = calc_dl_calc,
   .free = calc_dl_free,
 };
-
-      

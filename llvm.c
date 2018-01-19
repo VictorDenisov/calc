@@ -54,15 +54,25 @@ static LLVMTypeRef (* _llvm_calc_type[])() = {
       LHS.rvalue = LLVMConstInt  (LLVM_CALC_TYPE, NUMBER.val, /* SignExtend = */1); \
   }
 
-#define LLVM_BIN_OP(LHS, LEFT, OP, RIGHT) {                                       \
-    llvm_extra_t * extra = calc_get_extra (scanner);                              \
-    LHS.rvalue = LLVMBuild ## OP (extra->builder, LEFT.rvalue, RIGHT.rvalue, ""); \
+#define LLVMBuildDiv LLVMBuildUDiv
+
+#define LLVM_BIN_OP(LHS, LEFT, OP, RIGHT) {				\
+    llvm_extra_t * extra = calc_get_extra (scanner);			\
+    if (__builtin_types_compatible_p (calc_type_t, long double) ||	\
+        __builtin_types_compatible_p (calc_type_t, __complex__ long double) || \
+        __builtin_types_compatible_p (calc_type_t, double) ||		\
+        __builtin_types_compatible_p (calc_type_t, __complex__ double) || \
+        __builtin_types_compatible_p (calc_type_t, float) ||		\
+        __builtin_types_compatible_p (calc_type_t, __complex__ float))	\
+      LHS.rvalue = LLVMBuildF ## OP (extra->builder, LEFT.rvalue, RIGHT.rvalue, ""); \
+    else								\
+      LHS.rvalue = LLVMBuild ## OP (extra->builder, LEFT.rvalue, RIGHT.rvalue, ""); \
 }
 
-#define CALC_BIN_PLUS(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, FAdd, RIGHT)
-#define CALC_BIN_MINUS(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, FSub, RIGHT)
-#define CALC_BIN_MUL(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, FMul, RIGHT)
-#define CALC_BIN_DIV(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, FDiv, RIGHT)
+#define CALC_BIN_PLUS(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, Add, RIGHT)
+#define CALC_BIN_MINUS(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, Sub, RIGHT)
+#define CALC_BIN_MUL(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, Mul, RIGHT)
+#define CALC_BIN_DIV(LHS, LEFT, RIGHT) LLVM_BIN_OP (LHS, LEFT, Div, RIGHT)
 
 #define CALC_UN_MINUS(LHS, ARG) {                                \
     llvm_extra_t * extra = calc_get_extra (scanner);             \
