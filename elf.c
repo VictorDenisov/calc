@@ -23,11 +23,11 @@
 #define READ_PIPE (0)
 #define WRITE_PIPE (1)
 
-typedef struct dl_state_t {
+typedef struct elf_state_t {
   calc_type_t (*compiled_func) (calc_type_t);
   void * map_addr;
   ssize_t map_size;
-} dl_state_t;
+} elf_state_t;
 
 static void *
 dlsym (void * _elf, ssize_t size, char * symbol)
@@ -115,10 +115,10 @@ dlsym (void * _elf, ssize_t size, char * symbol)
   return (NULL);
 }
 
-static parser_t calc_dl_init (char * expr)
+static parser_t calc_elf_init (char * expr)
 {
-  dl_state_t * dl_state = malloc (sizeof (*dl_state));
-  if (NULL == dl_state)
+  elf_state_t * elf_state = malloc (sizeof (*elf_state));
+  if (NULL == elf_state)
     goto fail;
 
   int memfd = syscall (SYS_memfd_create, "shared.so", 0);
@@ -236,17 +236,17 @@ static parser_t calc_dl_init (char * expr)
       goto close_memfd;
     }
   
-  dl_state->compiled_func = dlsym (map_addr, size, CALC_FUNC_NAME);
+  elf_state->compiled_func = dlsym (map_addr, size, CALC_FUNC_NAME);
   
-  if (NULL == dl_state->compiled_func)
+  if (NULL == elf_state->compiled_func)
     goto close_memfd;
 
   close (memfd);
   
-  dl_state->map_addr = map_addr;
-  dl_state->map_size = size;
+  elf_state->map_addr = map_addr;
+  elf_state->map_size = size;
   
-  return (dl_state);
+  return (elf_state);
 
  close_pipes:
 #ifdef BIDIRECTIONAL_PIPE
@@ -264,32 +264,32 @@ static parser_t calc_dl_init (char * expr)
   close (memfd);
   
  free_state:
-  free (dl_state);
+  free (elf_state);
   
  fail:
   return (NULL);
 }
 
-static void calc_dl_free (parser_t state)
+static void calc_elf_free (parser_t state)
 {
-  dl_state_t * dl_state = state;
+  elf_state_t * elf_state = state;
   
-  munmap (dl_state->map_addr, dl_state->map_size);
+  munmap (elf_state->map_addr, elf_state->map_size);
 
-  free (dl_state);
+  free (elf_state);
 }
 
-static int calc_dl_calc (parser_t state, arg_x_t * arg_x, calc_type_t * result)
+static int calc_elf_calc (parser_t state, arg_x_t * arg_x, calc_type_t * result)
 {
-  dl_state_t * dl_state = state;
-  *result = dl_state->compiled_func (arg_x->x);
+  elf_state_t * elf_state = state;
+  *result = elf_state->compiled_func (arg_x->x);
   return (0);
 }
 
-parser_funcs_t dl_parser = {
-  .init = calc_dl_init,
-  .calc = calc_dl_calc,
-  .free = calc_dl_free,
+parser_funcs_t elf_parser = {
+  .init = calc_elf_init,
+  .calc = calc_elf_calc,
+  .free = calc_elf_free,
 };
 
       
