@@ -41,12 +41,14 @@ static const jit_type_t * _jit_calc_type[] = {
 #define CALC_NUMBER(LHS, NUMBER) {                                      \
     libjit_extra_t * extra = calc_get_extra (scanner);                  \
     if (__builtin_types_compatible_p (calc_type_t, long double) ||      \
-        __builtin_types_compatible_p (calc_type_t, __complex__ long double) || \
-        __builtin_types_compatible_p (calc_type_t, double) ||           \
-        __builtin_types_compatible_p (calc_type_t, __complex__ double) ||       \
-        __builtin_types_compatible_p (calc_type_t, float) ||            \
-        __builtin_types_compatible_p (calc_type_t, __complex__ float))  \
+        __builtin_types_compatible_p (calc_type_t, __complex__ long double)) \
       LHS.rvalue = jit_value_create_nfloat_constant (extra->func, JIT_CALC_TYPE, NUMBER.val); \
+    else if (__builtin_types_compatible_p (calc_type_t, double) ||           \
+	     __builtin_types_compatible_p (calc_type_t, __complex__ double)) \
+      LHS.rvalue = jit_value_create_float64_constant (extra->func, JIT_CALC_TYPE, NUMBER.val); \
+    else if (__builtin_types_compatible_p (calc_type_t, float) ||	\
+        __builtin_types_compatible_p (calc_type_t, __complex__ float))  \
+      LHS.rvalue = jit_value_create_float32_constant (extra->func, JIT_CALC_TYPE, NUMBER.val); \
     else                                                                \
       LHS.rvalue = jit_value_create_nint_constant (extra->func, JIT_CALC_TYPE, NUMBER.val); \
   }
