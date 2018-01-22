@@ -11,6 +11,7 @@
 #include <elf.h>
 
 #include "calc.h"
+#include "cast_expr.h"
 
 //#define BIDIRECTIONAL_PIPE
 
@@ -117,9 +118,13 @@ dlsym (void * _elf, ssize_t size, char * symbol)
 
 static parser_t calc_elf_init (char * expr)
 {
+  expr = cast_expr (expr);
+  if (NULL == expr)
+    goto fail;
+
   elf_state_t * elf_state = malloc (sizeof (*elf_state));
   if (NULL == elf_state)
-    goto fail;
+    goto free_expr;
 
   int memfd = syscall (SYS_memfd_create, "shared.so", 0);
   if (memfd <= 0)
@@ -242,6 +247,7 @@ static parser_t calc_elf_init (char * expr)
     goto close_memfd;
 
   close (memfd);
+  free (expr);
   
   elf_state->map_addr = map_addr;
   elf_state->map_size = size;
@@ -265,7 +271,10 @@ static parser_t calc_elf_init (char * expr)
   
  free_state:
   free (elf_state);
-  
+
+ free_expr:
+  free (expr);
+
  fail:
   return (NULL);
 }

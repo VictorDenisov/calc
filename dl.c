@@ -6,6 +6,7 @@
 #include <dlfcn.h>
 
 #include "calc.h"
+#include "cast_expr.h"
 
 #define CHAR_PTR_TMPLT "%s"
 #define CALC_FUNC_NAME "calc"
@@ -23,9 +24,13 @@ typedef struct dl_state_t {
 
 static parser_t calc_dl_init (char * expr)
 {
+  expr = cast_expr (expr);
+  if (NULL == expr)
+    goto fail;
+
   dl_state_t * dl_state = malloc (sizeof (*dl_state));
   if (NULL == dl_state)
-    goto fail;
+    goto free_expr;
 
   int memfd = syscall (SYS_memfd_create, "shared.so", 0);
   if (memfd <= 0)
@@ -68,6 +73,8 @@ static parser_t calc_dl_init (char * expr)
   if (NULL == dl_state->compiled_func)
     goto free_state;
 
+  free (expr);
+
   return (dl_state);
 
  close_memfd:
@@ -75,7 +82,10 @@ static parser_t calc_dl_init (char * expr)
   
  free_state:
   free (dl_state);
-  
+
+ free_expr:
+  free (expr);
+
  fail:
   return (NULL);
 }
