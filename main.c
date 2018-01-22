@@ -157,13 +157,14 @@ int run_calc (config_t * config)
     }
 
   static char * format[] = {
-    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = "%Lg",
-    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%Lg",
-    [ __builtin_types_compatible_p (calc_type_t, double) ]                  = "%g",
-    [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = "%g",
-    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%g",    
-    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = "%g",    
-    [ __builtin_types_compatible_p (calc_type_t, long long) ]               = "%lld",    
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = "%.20Lg",
+    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%.20Lg",
+    [ __builtin_types_compatible_p (calc_type_t, double) ]                  = "%.17g",
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = "%.17g",
+    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%.8g",
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = "%.8g",
+    [ __builtin_types_compatible_p (calc_type_t, unsigned long long) ]      = "%llu",
+    [ __builtin_types_compatible_p (calc_type_t, long long) ]               = "%lld",
     [ __builtin_types_compatible_p (calc_type_t, int) ]                     = "%d", /* default */
   };
   
