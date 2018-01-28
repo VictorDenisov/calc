@@ -38,12 +38,10 @@ as_printf (appendable_string_t * appendable_string, const char * format, ...)
       char * new_str = realloc (appendable_string->str, appendable_string->size);
       if (NULL == new_str)
 	goto out_of_memory;
-      if (NULL == appendable_string->str)
-	new_str[0] = 0;
       appendable_string->str = new_str;
     }
     
-  strcat (&appendable_string->str[allocated - 1], str);
+  strcpy (&appendable_string->str[allocated - 1], str);
   free (str);
   
   return (length);
