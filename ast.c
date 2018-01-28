@@ -67,14 +67,13 @@ static int allocate_nodes (node_arena_t * arena, unsigned int count)
     LHS.token_type = OP;                                \
   }
 
-#define CALC_NUMBER(LHS, NUMBER) LHS = (ast_node_t){ .val = NUMBER.val, .token_type = TT_NUMBER, }
-#define CALC_BIN_PLUS(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_PLUS, RIGHT)
-#define CALC_BIN_MINUS(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_MINUS, RIGHT)
-#define CALC_BIN_MUL(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_MUL, RIGHT)
-#define CALC_BIN_DIV(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_DIV, RIGHT)
+#define CALC_NUM(LHS, NUMBER) LHS = (ast_node_t){ .val = NUMBER.val, .token_type = TT_NUMBER, }
+#define CALC_ADD(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_PLUS, RIGHT)
+#define CALC_SUB(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_MINUS, RIGHT)
+#define CALC_MUL(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_MUL, RIGHT)
+#define CALC_DIV(LHS, LEFT, RIGHT) AST_BIN_OP (LHS, LEFT, TT_DIV, RIGHT)
 static ast_node_t zero = { .val = 0, .token_type = TT_NUMBER, };
-#define CALC_UN_MINUS(LHS, ARG) AST_BIN_OP (LHS, zero, TT_MINUS, ARG)
-#define CALC_UN_PLUS(LHS, ARG) LHS = ARG
+#define CALC_NEG(LHS, ARG) AST_BIN_OP (LHS, zero, TT_MINUS, ARG)
 #define CALC_X(LHS)  LHS = (ast_node_t){ .val = 0, .token_type = TT_X, }
 
 #define calc_parse calc_ast_parse

@@ -19,13 +19,12 @@ typedef struct compute_extra_t {
     extra->result = RHS;                                \
 }
 
-#define CALC_NUMBER(LHS, NUMBER) LHS = NUMBER
-#define CALC_BIN_PLUS(LHS, LEFT, RIGHT) LHS = LEFT + RIGHT
-#define CALC_BIN_MINUS(LHS, LEFT, RIGHT) LHS = LEFT - RIGHT
-#define CALC_BIN_MUL(LHS, LEFT, RIGHT) LHS = LEFT * RIGHT
-#define CALC_BIN_DIV(LHS, LEFT, RIGHT) LHS = LEFT / RIGHT
-#define CALC_UN_MINUS(LHS, ARG) LHS = -ARG
-#define CALC_UN_PLUS(LHS, ARG) LHS = ARG
+#define CALC_NUM(LHS, NUMBER) LHS = NUMBER
+#define CALC_ADD(LHS, LEFT, RIGHT) LHS = LEFT + RIGHT
+#define CALC_SUB(LHS, LEFT, RIGHT) LHS = LEFT - RIGHT
+#define CALC_MUL(LHS, LEFT, RIGHT) LHS = LEFT * RIGHT
+#define CALC_DIV(LHS, LEFT, RIGHT) LHS = LEFT / RIGHT
+#define CALC_NEG(LHS, ARG) LHS = -ARG
 #define CALC_X(LHS) {                                             \
     compute_extra_t * extra = calc_get_extra (scanner);           \
     if (!extra->arg_x.has_x)                                      \

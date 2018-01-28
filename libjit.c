@@ -38,7 +38,7 @@ static const jit_type_t * _jit_calc_type[] = {
 };
 #define JIT_CALC_TYPE (*_jit_calc_type[sizeof (_jit_calc_type) / sizeof (_jit_calc_type[0]) - 1])
 
-#define CALC_NUMBER(LHS, NUMBER) {                                      \
+#define CALC_NUM(LHS, NUMBER) {						\
     libjit_extra_t * extra = calc_get_extra (scanner);                  \
     if (__builtin_types_compatible_p (calc_type_t, long double) ||      \
         __builtin_types_compatible_p (calc_type_t, __complex__ long double)) \
@@ -58,16 +58,15 @@ static const jit_type_t * _jit_calc_type[] = {
     LHS.rvalue = jit_insn_ ## OP (extra->func, LEFT.rvalue, RIGHT.rvalue); \
 }
 
-#define CALC_BIN_PLUS(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, add, RIGHT)
-#define CALC_BIN_MINUS(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, sub, RIGHT)
-#define CALC_BIN_MUL(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, mul, RIGHT)
-#define CALC_BIN_DIV(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, div, RIGHT)
+#define CALC_ADD(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, add, RIGHT)
+#define CALC_SUB(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, sub, RIGHT)
+#define CALC_MUL(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, mul, RIGHT)
+#define CALC_DIV(LHS, LEFT, RIGHT) LIBJIT_BIN_OP (LHS, LEFT, div, RIGHT)
 
-#define CALC_UN_MINUS(LHS, ARG) {                        \
+#define CALC_NEG(LHS, ARG) {				 \
     libjit_extra_t * extra = calc_get_extra (scanner);   \
     LHS.rvalue = jit_insn_neg (extra->func, ARG.rvalue); \
 }
-#define CALC_UN_PLUS(LHS, ARG) LHS = ARG
 
 #define CALC_X(LHS) {                                  \
     libjit_extra_t * extra = calc_get_extra (scanner); \

@@ -25,6 +25,10 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 %locations
 %defines
 
+%left '+' '-'
+%left '*' '/'
+%precedence NEG
+
 %start value
 
 %token NUMBER
@@ -32,20 +36,13 @@ calc_error (YYLTYPE * lloc, void * scanner, char * error)
 %%
 value: expr { CALC_RESULT ($1); }
 
-expr:
-  term '+' expr { CALC_BIN_PLUS ($$, $1, $3); }
-| term '-' expr { CALC_BIN_MINUS ($$, $1, $3); }
-| term
-
-term:
-  factor '*' term { CALC_BIN_MUL ($$, $1, $3); }
-| factor '/' term { CALC_BIN_DIV ($$, $1, $3); }
-| factor
-
-factor:
-  NUMBER { CALC_NUMBER ($$, $1); }
-| '-' factor { CALC_UN_MINUS ($$, $2); }
-| '+' factor { CALC_UN_PLUS ($$, $2); }
+expr: NUMBER { CALC_NUM ($$, $1); }
+| expr '+' expr { CALC_ADD ($$, $1, $3); }
+| expr '-' expr { CALC_SUB ($$, $1, $3); }
+| expr '*' expr { CALC_MUL ($$, $1, $3); }
+| expr '/' expr { CALC_DIV ($$, $1, $3); }
+| '-' expr %prec NEG { CALC_NEG ($$, $2); }
+| '+' expr %prec NEG { $$ = $2; }
 | '(' expr ')' { $$ = $2; }
 | 'x' { CALC_X ($$); }
 
