@@ -3,4 +3,8 @@
 *~
 *.sw[po]
 *.o
-main
+main*
+!main.c
+.hypothesis
+.ipynb_checkpoints
+.venv
