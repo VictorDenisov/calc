@@ -95,8 +95,8 @@ print_casted_val (appendable_string_t * appendable_string, calc_type_t val)
     [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%.20Lg",
     [ __builtin_types_compatible_p (calc_type_t, double) ]                  = "%.17g",
     [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = "%.17g",
-    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%.8g",
-    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = "%.8g",
+    [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%.9g",
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ float) ]       = "%.9g",
     [ __builtin_types_compatible_p (calc_type_t, unsigned long long) ]      = "%llu",
     [ __builtin_types_compatible_p (calc_type_t, long long) ]               = "%lld",
     [ __builtin_types_compatible_p (calc_type_t, int) ]                     = "%d", /* default */
