@@ -72,24 +72,24 @@ def to_str(expr, wrap=None):
     raise TypeError(repr(expr))
 
 
-def expected_result(expr, np_type):
-    expr_str = to_str(expr, 'np_type({})')
+def expected_result(expr, np_type, wrap=None):
+    expr_str = to_str(expr, wrap if wrap else 'np_type({})')
     glob = {'__builtins__': {}, 'np_type': np_type}
     exec('result = np_type({})'.format(expr_str), glob)
     return glob['result']
 
 
-@pytest.mark.parametrize('calc_type,np_type', [
-    #('long_double', numpy.longdouble),
-    ('double', numpy.float64),
-    ('float', numpy.float32),
+@pytest.mark.parametrize('calc_type,np_type,wrap', [
+    ('long_double', numpy.longdouble, 'np_type("{}")'),
+    ('double', numpy.float64, None),
+    ('float', numpy.float32, None),
 ])
 @pytest.mark.parametrize('parser', PARSERS)
 @hypothesis.settings(max_iterations=100, max_examples=100)
 @hypothesis.given(expr)
-def test_hypo(calc_type, np_type, parser, expr):
+def test_hypo(calc_type, np_type, wrap, parser, expr):
     expr_str = to_str(expr)
-    expected = expected_result(expr, np_type)
+    expected = expected_result(expr, np_type, wrap)
     hypothesis.assume(numpy.isfinite(expected))
     res = run_simple(calc_type, ["-p", parser, "--", expr_str])
     assert np_type(res) == expected
