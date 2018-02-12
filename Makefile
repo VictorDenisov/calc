@@ -38,4 +38,4 @@ ${MAINS}: main.%: $(filter-out *.tab.* *.lex.*,*.c *.h *.y)
 
 .PHONY: test
 test: ${MAINS}
-	python3 test.py -v
+	py.test -v test.py
