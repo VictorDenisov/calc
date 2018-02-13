@@ -3,6 +3,7 @@ import subprocess
 
 import hypothesis
 import hypothesis.strategies as st
+import hypothesis.extra.numpy as npst
 import numpy
 import pytest
 
@@ -47,21 +48,26 @@ def test_round(calc_type, parser):
     res = run_simple(calc_type, ["-p", parser, "2.1"])
     assert res == "2"
 
+farrays = npst.arrays(numpy.longdouble, 1)
 expr = st.deferred(
     lambda: (
-        st.floats(allow_nan=False, allow_infinity=False) |
+        longdouble_strategy() |
         st.tuples(st.just('('), expr) |
         st.tuples(expr, st.lists(st.tuples(st.sampled_from('+-*/'), expr)))
     )
 )
 
 
-def to_str(expr, wrap=None):
-    if isinstance(expr, float):
-        if not wrap:
-            return str(expr)
-        else:
-            return wrap.format(expr)
+@st.composite
+def longdouble_strategy(draw):
+    x = draw(farrays)[0]
+    hypothesis.assume(numpy.isfinite(x))
+    return x
+
+
+def to_str(expr, wrap='{}'):
+    if isinstance(expr, numpy.longdouble):
+        return wrap.format(expr)
     elif expr[0] == '(':
         return '({})'.format(to_str(expr[1], wrap))
     else:
@@ -75,21 +81,23 @@ def to_str(expr, wrap=None):
 def expected_result(expr, np_type, wrap=None):
     expr_str = to_str(expr, wrap if wrap else 'np_type({})')
     glob = {'__builtins__': {}, 'np_type': np_type}
-    exec('result = np_type({})'.format(expr_str), glob)
+    cmd = 'result = np_type({})'.format(expr_str)
+    exec(cmd, glob)
     return glob['result']
 
 
 @pytest.mark.parametrize('calc_type,np_type,wrap', [
-    ('long_double', numpy.longdouble, 'np_type("{}")'),
+    #('long_double', numpy.longdouble, 'np_type("{}")'),
     ('double', numpy.float64, None),
     ('float', numpy.float32, None),
 ])
 @pytest.mark.parametrize('parser', PARSERS)
-@hypothesis.settings(max_iterations=100, max_examples=100)
+@hypothesis.settings(max_iterations=1, max_examples=1000)
 @hypothesis.given(expr)
 def test_hypo(calc_type, np_type, wrap, parser, expr):
     expr_str = to_str(expr)
     expected = expected_result(expr, np_type, wrap)
     hypothesis.assume(numpy.isfinite(expected))
     res = run_simple(calc_type, ["-p", parser, "--", expr_str])
-    assert np_type(res) == expected
+    res_np = np_type(res)
+    assert res_np == expected
