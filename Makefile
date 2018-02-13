@@ -20,29 +20,24 @@ main: main.${CALC_TYPE_T}
 clean:
 	$(RM) -v *.tab.[ch] *.lex.[ch] *.o main ${MAINS}
 
-${MAINS}: main.%: main.%.o calc.lex.%.o compute.%.o ast.%.o cast_expr.%.o gccjit.%.o libjit.%.o llvm.%.o elf.%.o dl.%.o
-	$(LINK.o) $^ $(LOADLIBES) $(LDLIBS) -o $@
+define GEN_RULE
+%.${1}.o: %.c
+	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,${1})" -o $$@ $$<
+
+main.${1}: main.${1}.o calc.lex.${1}.o compute.${1}.o ast.${1}.o cast_expr.${1}.o gccjit.${1}.o libjit.${1}.o llvm.${1}.o elf.${1}.o dl.${1}.o
 parser.h: calc.tab.h calc.lex.h
-main.%.o: main.c calc.h parser.h compute.h ast.h gccjit.h libjit.h llvm.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-compute.%.o: compute.c calc.tab.c calc.h parser.h compute.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-ast.%.o: ast.c calc.tab.c calc.h parser.h ast.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-gccjit.%.o: gccjit.c calc.tab.c calc.h parser.h gccjit.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-libjit.%.o: libjit.c calc.tab.c calc.h parser.h libjit.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-llvm.%.o: llvm.c calc.tab.c calc.h parser.h llvm.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-elf.%.o: elf.c calc.h elf.h cast_expr.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-dl.%.o: dl.c calc.h dl.h cast_expr.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-calc.lex.%.o: calc.lex.c calc.h parser.h
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
-cast_expr.%.o: cast_expr.c
-	$(COMPILE.c) -Dcalc_type_t="$(subst _, ,$*)" $(OUTPUT_OPTION) $<
+main.${1}.o: calc.h parser.h compute.h ast.h gccjit.h libjit.h llvm.h
+compute.${1}.o: calc.tab.c calc.h parser.h compute.h
+ast.${1}.o: calc.tab.c calc.h parser.h ast.h
+gccjit.${1}.o: calc.tab.c calc.h parser.h gccjit.h
+libjit.${1}.o: calc.tab.c calc.h parser.h libjit.h
+llvm.${1}.o: calc.tab.c calc.h parser.h llvm.h
+elf.${1}.o: calc.h elf.h cast_expr.h
+dl.${1}.o: calc.h dl.h cast_expr.h
+calc.lex.${1}.o: calc.h parser.h
+endef
+
+$(foreach _type,$(TYPES),$(eval $(call GEN_RULE,$(_type))))
 
 .PHONY: test
 test: ${MAINS}
