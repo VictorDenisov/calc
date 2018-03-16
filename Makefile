@@ -5,7 +5,7 @@ CALC_TYPE_T := long_double
 YACC=bison -Wall -Werror
 LEX=flex
 CFLAGS+=-Wall -Werror -O2 -g -Ilibjit/include -I/usr/lib/llvm-3.9/include
-LDLIBS+=-lpthread -lrt -ldl -ltinfo -lpthread -lz -lm
+LDLIBS+=-lgccjit libjit/jit/.libs/libjit.a -lpthread -L/usr/lib/llvm-3.9/lib -lLLVM-3.9 -lrt -ldl -ltinfo -lpthread -lz -lm
 
 %.tab.h %.tab.c: %.y
 	$(YACC) -d $<
