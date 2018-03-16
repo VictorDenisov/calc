@@ -87,7 +87,7 @@ def expected_result(expr, np_type, wrap=None):
 
 
 @pytest.mark.parametrize('calc_type,np_type,wrap', [
-    #('long_double', numpy.longdouble, 'np_type("{}")'),
+    ('long_double', numpy.longdouble, 'np_type("{}")'),
     ('double', numpy.float64, None),
     ('float', numpy.float32, None),
 ])

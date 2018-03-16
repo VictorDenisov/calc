@@ -91,8 +91,8 @@ static int
 print_casted_val (appendable_string_t * appendable_string, calc_type_t val)
 {
   static char * format[] = {
-    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = "%.20Lg",
-    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%.20Lg",
+    [ __builtin_types_compatible_p (calc_type_t, __complex__ long double) ] = "%.21Lg",
+    [ __builtin_types_compatible_p (calc_type_t, long double) ]             = "%.21Lg",
     [ __builtin_types_compatible_p (calc_type_t, double) ]                  = "%.17g",
     [ __builtin_types_compatible_p (calc_type_t, __complex__ double) ]      = "%.17g",
     [ __builtin_types_compatible_p (calc_type_t, float) ]                   = "%.9g",
